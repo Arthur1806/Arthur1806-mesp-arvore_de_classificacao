@@ -1,0 +1,2621 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proposta de Árvore de Classificação Fala.BR | Ouvidoria do Ministério do Esporte</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            govblue: {
+              50: '#f0f5fc',
+              100: '#dce8f8',
+              200: '#bed5f3',
+              500: '#1351b4',
+              600: '#0c326f',
+              700: '#071d49',
+              800: '#051433',
+              900: '#020b1c'
+            },
+            gogreen: {
+              500: '#168821',
+              600: '#126d1a',
+              700: '#0e5514'
+            },
+            govyellow: {
+              400: '#ffcd07',
+              500: '#e5b300'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Presentation transitions */
+    .slide {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+      transform: translateY(8px);
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Funnel styles */
+    .funnel-stage {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .funnel-stage:hover {
+      transform: scale(1.015);
+    }
+
+    /* Print styles for export */
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .slide {
+        display: flex !important;
+        opacity: 1 !important;
+        page-break-after: always;
+        height: 100vh;
+        transform: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-govblue-500 selection:text-white">
+
+  <!-- Top Header / Bar -->
+  <header class="no-print bg-slate-900/90 backdrop-blur border-b border-slate-800 px-6 py-3 flex items-center justify-between z-30 sticky top-0 shadow-sm">
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2">
+        <span class="inline-block w-3.5 h-3.5 rounded-full bg-gogreen-500 shadow-sm shadow-gogreen-500/50"></span>
+        <span class="inline-block w-3.5 h-3.5 rounded-full bg-govyellow-400 shadow-sm shadow-govyellow-400/50"></span>
+        <span class="inline-block w-3.5 h-3.5 rounded-full bg-govblue-500 shadow-sm shadow-govblue-500/50"></span>
+      </div>
+      <div class="h-5 w-px bg-slate-700"></div>
+      <div>
+        <h1 class="text-sm font-semibold tracking-wide text-white uppercase flex items-center gap-2">
+          <span>Ministério do Esporte</span>
+          <span class="text-xs bg-govblue-600/80 text-blue-200 px-2 py-0.5 rounded font-mono font-medium">Ouvidoria-Geral</span>
+        </h1>
+        <p class="text-xs text-slate-400">Proposta Técnica: Nova Árvore de Classificação Fala.BR</p>
+      </div>
+    </div>
+
+    <!-- Slide Navigation Header Controls -->
+    <div class="flex items-center space-x-3 text-xs">
+      <button onclick="toggleOverview()" class="px-2.5 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1.5 border border-slate-700">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+        <span>Sumário</span>
+      </button>
+
+      <button onclick="toggleFullScreen()" class="px-2.5 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1.5 border border-slate-700" title="Tela Cheia (Atalho: F)">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+        <span>Tela Cheia</span>
+      </button>
+
+      <div class="bg-slate-800 px-3 py-1 rounded-md border border-slate-700 font-mono text-slate-300">
+        <span id="currentSlideIndicator">1</span> / <span id="totalSlidesIndicator">10</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Slide Canvas Container -->
+  <main class="flex-1 flex items-stretch justify-center p-4 md:p-8 max-w-7xl mx-auto w-full relative">
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 1: CAPA                                                  -->
+    <!-- ============================================================== -->
+    <section class="slide active flex-col justify-center items-center text-center w-full min-h-[75vh] py-8" data-title="Capa">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-govblue-600/30 border border-govblue-500/40 text-blue-300 text-xs font-semibold mb-6 uppercase tracking-wider animate-pulse">
+        <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+        Plataforma Integrada de Ouvidoria e Acesso à Informação — Fala.BR
+      </div>
+
+      <h1 class="text-4xl md:text-6xl font-black tracking-tight text-white max-w-4xl leading-tight md:leading-tight">
+        Nova Árvore de Classificação da <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-emerald-400 to-amber-300">Ouvidoria</span>
+      </h1>
+
+      <p class="text-lg md:text-xl text-slate-300 max-w-3xl mt-6 leading-relaxed font-normal">
+        Otimização de <strong class="text-white font-semibold">Usabilidade</strong>, triagem ágil e estruturação de contextos multidimensionais para inteligência de dados e extração analítica de denúncias no Ministério do Esporte.
+      </p>
+
+      <!-- Key Pillars Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mt-12 w-full max-w-4xl text-left">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-5 hover:border-govblue-500/50 transition">
+          <div class="w-10 h-10 rounded-lg bg-govblue-600/30 text-blue-400 flex items-center justify-center font-bold text-lg mb-3">1</div>
+          <h3 class="font-bold text-white text-base">Foco em Usabilidade</h3>
+          <p class="text-slate-400 text-xs mt-1.5 leading-relaxed">Classificação intuitiva para o cidadão e triagem padronizada e sem dubiedade para o ouvidor.</p>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-5 hover:border-emerald-500/50 transition">
+          <div class="w-10 h-10 rounded-lg bg-emerald-600/30 text-emerald-400 flex items-center justify-center font-bold text-lg mb-3">2</div>
+          <h3 class="font-bold text-white text-base">Funil Estruturado</h3>
+          <p class="text-slate-400 text-xs mt-1.5 leading-relaxed">Hierarquia direta (Assunto &rarr; Subassunto) combinada a TAGS Universais transversais.</p>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-5 hover:border-amber-500/50 transition">
+          <div class="w-10 h-10 rounded-lg bg-amber-600/30 text-amber-400 flex items-center justify-center font-bold text-lg mb-3">3</div>
+          <h3 class="font-bold text-white text-base">Inteligência em Denúncias</h3>
+          <p class="text-slate-400 text-xs mt-1.5 leading-relaxed">Filtros precisos para extração de relatórios gerenciais e encaminhamento rápido às secretarias finalísticas.</p>
+        </div>
+      </div>
+
+      <div class="mt-10 flex items-center gap-4 text-xs text-slate-500">
+        <span>Pressione <kbd class="px-2 py-1 bg-slate-800 text-slate-300 rounded border border-slate-700">&rarr;</kbd> ou <kbd class="px-2 py-1 bg-slate-800 text-slate-300 rounded border border-slate-700">Espaço</kbd> para avançar</span>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 2: DIAGNÓSTICO - AS DORES ATUAIS                         -->
+    <!-- ============================================================== -->
+    <section class="slide flex-col justify-start w-full min-h-[75vh]" data-title="Dores Atuais vs. Usabilidade">
+      <div class="border-b border-slate-800 pb-4 mb-6">
+        <span class="text-xs font-bold text-rose-400 tracking-wider uppercase">Diagnóstico da Ouvidoria</span>
+        <h2 class="text-3xl font-extrabold text-white mt-1">As Dores da Falta de Usabilidade na Classificação</h2>
+        <p class="text-slate-400 text-sm mt-1">Como a ausência de uma árvore contextualizada prejudica a extração de relatórios e a apuração de denúncias no Fala.BR.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 items-stretch">
+        <!-- Coluna da Dor Atual -->
+        <div class="bg-gradient-to-br from-rose-950/30 to-slate-900/80 border border-rose-900/40 rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="px-3 py-1 rounded-full text-xs font-bold bg-rose-900/40 text-rose-300 border border-rose-800">
+                ⚠️ Cenário Atual (Problemas Críticos)
+              </span>
+              <span class="text-xs text-rose-400 font-mono">Sem contexto operacional</span>
+            </div>
+
+            <ul class="space-y-4 text-sm text-slate-300">
+              <li class="flex items-start gap-3">
+                <span class="p-1 rounded bg-rose-900/60 text-rose-300 mt-0.5">✕</span>
+                <div>
+                  <strong class="text-white block font-semibold">Subjetividade e Triagem Ambígua</strong>
+                  <span class="text-slate-400 text-xs">Sem subassuntos delimitados, manifestações semelhantes recebem classificações distintas dependendo de quem opera a triagem.</span>
+                </div>
+              </li>
+
+              <li class="flex items-start gap-3">
+                <span class="p-1 rounded bg-rose-900/60 text-rose-300 mt-0.5">✕</span>
+                <div>
+                  <strong class="text-white block font-semibold">"Apagão" Analítico em Denúncias</strong>
+                  <span class="text-slate-400 text-xs">Dificuldade em rastrear se uma denúncia de fraude envolve Bolsa Atleta, Lei de Incentivo, convênios ou conduta funcional específica.</span>
+                </div>
+              </li>
+
+              <li class="flex items-start gap-3">
+                <span class="p-1 rounded bg-rose-900/60 text-rose-300 mt-0.5">✕</span>
+                <div>
+                  <strong class="text-white block font-semibold">Extratificação Manual de Relatórios</strong>
+                  <span class="text-slate-400 text-xs">Necessidade constante de leitura individual de processos para produzir relatórios gerenciais, atrasando respostas a órgãos de controle (CGU, TCU).</span>
+                </div>
+              </li>
+
+              <li class="flex items-start gap-3">
+                <span class="p-1 rounded bg-rose-900/60 text-rose-300 mt-0.5">✕</span>
+                <div>
+                  <strong class="text-white block font-semibold">Lentidão no Encaminhamento Finalístico</strong>
+                  <span class="text-slate-400 text-xs">Falta de identificação imediata da secretaria ou unidade responsável (Coger, CE, SNAEDE, SNPAR, SNE, etc.).</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-rose-900/30 text-xs text-rose-300/80 italic">
+            Impacto: Alto retrabalho, perda de dados estratégicos e tempo de resposta prejudicado.
+          </div>
+        </div>
+
+        <!-- Coluna da Solução Proposta -->
+        <div class="bg-gradient-to-br from-emerald-950/30 to-slate-900/80 border border-emerald-900/40 rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-300 border border-emerald-800">
+                ✨ Proposta Baseada em Usabilidade
+              </span>
+              <span class="text-xs text-emerald-400 font-mono">Contextos & Inteligência</span>
+            </div>
+
+            <ul class="space-y-4 text-sm text-slate-300">
+              <li class="flex items-start gap-3">
+                <span class="p-1 rounded bg-emerald-900/60 text-emerald-300 mt-0.5">✓</span>
+                <div>
+                  <strong class="text-white block font-semibold">Assunto &rarr; Subassunto Estrito</strong>
+                  <span class="text-slate-400 text-xs">A escolha do Assunto restringe e direciona automaticamente apenas os Subassuntos pertinentes, eliminando erros humanos.</span>
+                </div>
+              </li>
+
+              <li class="flex items-start gap-3">
+                <span class="p-1 rounded bg-emerald-900/60 text-emerald-300 mt-0.5">✓</span>
+                <div>
+                  <strong class="text-white block font-semibold">TAGS Universais Transversais</strong>
+                  <span class="text-slate-400 text-xs">Possibilita cruzar dimensões: qual modalidade, qual confederação, qual tipo de irregularidade e qual unidade interna sem engessar a árvore.</span>
+                </div>
+              </li>
+
+              <li class="flex items-start gap-3">
+                <span class="p-1 rounded bg-emerald-900/60 text-emerald-300 mt-0.5">✓</span>
+                <div>
+                  <strong class="text-white block font-semibold">Relatórios Executivos Automatizados</strong>
+                  <span class="text-slate-400 text-xs">Filtros dinâmicos no Fala.BR: "Denúncias de Suposta Manipulação de Resultados no Futebol" ou "Irregularidades em Convênios de Infraestrutura" a 1 clique.</span>
+                </div>
+              </li>
+
+              <li class="flex items-start gap-3">
+                <span class="p-1 rounded bg-emerald-900/60 text-emerald-300 mt-0.5">✓</span>
+                <div>
+                  <strong class="text-white block font-semibold">Gestão Preventiva e Governança</strong>
+                  <span class="text-slate-400 text-xs">Identificação antecipada de reincidências para subsidiar decisões do Ministro e das Secretarias Nacionais.</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-emerald-900/30 text-xs text-emerald-300/80 italic">
+            Benefício: Dados limpos, relatórios em tempo real e eficiência no tratamento de denúncias.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 3: O CONFRONTO: ÁRVORE ANTIGA VS. NOVA PROPOSTA           -->
+    <!-- ============================================================== -->
+    <section class="slide flex-col justify-start w-full min-h-[75vh]" data-title="Árvore Antiga vs. Nova Proposta">
+      <div class="border-b border-slate-800 pb-3 mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <span class="text-xs font-bold text-amber-400 tracking-wider uppercase flex items-center gap-1.5">
+            <span>⚖️</span>
+            <span>Auditoria & Diagnóstico Comparativo</span>
+          </span>
+          <h2 class="text-2xl md:text-3xl font-extrabold text-white mt-0.5">Onde a Árvore Antiga Falhava vs. O que a Nova Corrige</h2>
+          <p class="text-slate-400 text-xs sm:text-sm mt-0.5">Evidências práticas de gargalos que comprometiam a triagem e geravam dados inconsistentes no Fala.BR.</p>
+        </div>
+        <button onclick="toggleOldTreeModal()" class="self-start sm:self-auto text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-white px-3 py-1.5 rounded-lg border border-amber-500/30 transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span>Ver Tabela Original Antiga</span>
+        </button>
+      </div>
+
+      <!-- 3 Comparative Pillar Cards -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 items-stretch">
+        
+        <!-- Card 1: O Caso Crítico de Corrupção -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-rose-800/60 transition">
+          <div>
+            <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-800">
+              <span class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                <span>🚨</span> 1. Corrupção & Integridade
+              </span>
+              <span class="text-[10px] bg-rose-950 text-rose-300 px-1.5 py-0.5 rounded font-mono">Gargalo Crítico</span>
+            </div>
+
+            <div class="space-y-3 text-xs">
+              <!-- Antiga -->
+              <div class="bg-rose-950/30 border border-rose-900/40 rounded-lg p-2.5">
+                <span class="text-[10px] uppercase font-bold text-rose-400 block mb-1">❌ Árvore Antiga (1 único subassunto):</span>
+                <p class="text-slate-300 font-mono text-[11px] bg-slate-950/60 px-2 py-1 rounded">
+                  • Suposta Irregularidade na Execução do Contrato
+                </p>
+                <p class="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                  <strong>Problema grave:</strong> Se a denúncia fosse de convênio com ONG esportiva, desvio em federação, nepotismo ou conduta de agente público, não havia onde classificar! O dado era forçado ou virava "limbo".
+                </p>
+              </div>
+
+              <!-- Nova -->
+              <div class="bg-emerald-950/30 border border-emerald-900/40 rounded-lg p-2.5">
+                <span class="text-[10px] uppercase font-bold text-emerald-400 block mb-1">✅ Nova Proposta (4 contextos claros):</span>
+                <ul class="text-[11px] text-emerald-200 font-medium space-y-0.5">
+                  <li>• Contratos e Contratações Públicas</li>
+                  <li>• Parcerias, Convênios e Repasses</li>
+                  <li>• Gestão de Recursos Públicos</li>
+                  <li>• Conduta e Benefícios Indevidos</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-emerald-400 font-medium">
+            🎯 Ganho: Cobertura de 100% das tipologias exigidas pela CGU, Coger e Ética.
+          </div>
+        </div>
+
+        <!-- Card 2: A Racionalização de Esporte -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-blue-800/60 transition">
+          <div>
+            <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-800">
+              <span class="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                <span>🏅</span> 2. Macroárea de Esporte
+              </span>
+              <span class="text-[10px] bg-blue-950 text-blue-300 px-1.5 py-0.5 rounded font-mono">Usabilidade</span>
+            </div>
+
+            <div class="space-y-3 text-xs">
+              <!-- Antiga -->
+              <div class="bg-rose-950/30 border border-rose-900/40 rounded-lg p-2.5">
+                <span class="text-[10px] uppercase font-bold text-rose-400 block mb-1">❌ Árvore Antiga (Mistura conceitual):</span>
+                <p class="text-[11px] text-slate-300 leading-relaxed">
+                  Misturava no mesmo nível de subassunto atores isolados (<code class="text-rose-300">Atleta</code>), órgãos (<code class="text-rose-300">Confederação</code>), equipamentos físicos (<code class="text-rose-300">Centro Olímpico</code>) e eventos (<code class="text-rose-300">Olimpíadas</code>, <code class="text-rose-300">Paralimpíadas</code>).
+                </p>
+                <p class="text-[10px] text-slate-400 mt-1">Concorria e gerava duplicidade com as tags.</p>
+              </div>
+
+              <!-- Nova -->
+              <div class="bg-emerald-950/30 border border-emerald-900/40 rounded-lg p-2.5">
+                <span class="text-[10px] uppercase font-bold text-emerald-400 block mb-1">✅ Nova Proposta (Padronização Temática):</span>
+                <p class="text-[11px] text-slate-300 leading-relaxed">
+                  Subassuntos definem as <strong>linhas de ação e programas do Ministério</strong> (<code class="text-emerald-300">Atletas</code>, <code class="text-emerald-300">Entidades Desportivas</code>, <code class="text-emerald-300">Esporte Seguro</code>, <code class="text-emerald-300">Infraestrutura Esportiva</code>, <code class="text-emerald-300">Competições e Eventos</code>).
+                </p>
+                <p class="text-[10px] text-emerald-400 mt-1">Atributos específicos (ex: qual confederação ou modalidade) vão para as TAGS.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-emerald-400 font-medium">
+            🎯 Ganho: Fim da dúvida do triador entre marcar um subassunto ou uma tag.
+          </div>
+        </div>
+
+        <!-- Card 3: Higienização das TAGS -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-amber-800/60 transition">
+          <div>
+            <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-800">
+              <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                <span>🏷️</span> 3. Catálogo de TAGS
+              </span>
+              <span class="text-[10px] bg-amber-950 text-amber-300 px-1.5 py-0.5 rounded font-mono">Saneamento</span>
+            </div>
+
+            <div class="space-y-3 text-xs">
+              <!-- Antiga -->
+              <div class="bg-rose-950/30 border border-rose-900/40 rounded-lg p-2.5">
+                <span class="text-[10px] uppercase font-bold text-rose-400 block mb-1">❌ Catálogo Antigo (Poluído e Desorganizado):</span>
+                <ul class="text-[11px] text-slate-300 space-y-1">
+                  <li class="flex items-center gap-1.5"><span class="text-rose-400 font-bold">•</span> Erros de digitação em produção: <code class="bg-rose-950 text-rose-300 px-1 rounded">Infrat</code></li>
+                  <li class="flex items-center gap-1.5"><span class="text-rose-400 font-bold">•</span> Tags de teste não excluídas: <code class="bg-rose-950 text-rose-300 px-1 rounded">teste</code></li>
+                  <li class="flex items-center gap-1.5"><span class="text-rose-400 font-bold">•</span> Ações pontuais obsoletas: <code class="bg-slate-800 text-slate-300 px-1 rounded">Copa 2027</code>, <code class="bg-slate-800 text-slate-300 px-1 rounded">Minuto p/ o Esporte</code></li>
+                  <li class="flex items-center gap-1.5"><span class="text-rose-400 font-bold">•</span> Lista corrida com 100+ itens sem categoria.</li>
+                </ul>
+              </div>
+
+              <!-- Nova -->
+              <div class="bg-emerald-950/30 border border-emerald-900/40 rounded-lg p-2.5">
+                <span class="text-[10px] uppercase font-bold text-emerald-400 block mb-1">✅ Nova Proposta (12 Famílias Estruturadas):</span>
+                <p class="text-[11px] text-slate-300 leading-relaxed">
+                  Catálogo auditado, higienizado e classificado em <strong>12 dimensões lógicas</strong> (Entidades, Modalidades, Denúncias, Unidades MESP, Atores, Status).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-emerald-400 font-medium">
+            🎯 Ganho: Base de dados 100% limpa, confiável e pronta para BI/Analytics.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Modal para Visualizar a Tabela Original Antiga -->
+    <div id="oldTreeModal" class="no-print fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+        <div class="px-6 py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+          <div class="flex items-center gap-2">
+            <span class="text-amber-400 text-base">📋</span>
+            <h3 class="text-sm font-bold text-white">Registro Fotográfico: Tabela Original da Árvore Antiga</h3>
+          </div>
+          <button onclick="toggleOldTreeModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="p-6 overflow-y-auto flex flex-col items-center justify-center bg-slate-950/50">
+          <img src="arvore_antiga.png" alt="Árvore Antiga - Fala.BR" class="max-w-full rounded-xl border border-slate-700 shadow-xl max-h-[70vh] object-contain">
+          <p class="text-xs text-slate-400 mt-3 text-center">Registro da parametrização anterior cadastrada no sistema Fala.BR do Ministério do Esporte.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 4: O MODELO DE FUNIL DE FILTRAGEM (INFOGRÁFICO)           -->
+    <!-- ============================================================== -->
+    <section class="slide flex-col justify-start w-full min-h-[75vh]" data-title="O Funil de Filtragem">
+      <div class="border-b border-slate-800 pb-4 mb-6">
+        <span class="text-xs font-bold text-govblue-400 tracking-wider uppercase">Metodologia e Arquitetura</span>
+        <h2 class="text-3xl font-extrabold text-white mt-1">O Funil de Filtragem e Refinamento de Dados</h2>
+        <p class="text-slate-400 text-sm mt-1">Como a manifestação é afunilada de forma progressiva: do macrocontexto ao dado analítico acionável.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center flex-1">
+        
+        <!-- Left: Funil Visual SVG / Gráfico -->
+        <div class="lg:col-span-7 flex flex-col items-center justify-center space-y-3 py-2">
+          
+          <!-- Funnel Stage 1: Assunto -->
+          <div class="funnel-stage w-full max-w-xl bg-gradient-to-r from-govblue-700 via-govblue-600 to-govblue-700 border-2 border-blue-400/50 rounded-2xl p-4 shadow-lg shadow-govblue-900/50 text-center relative overflow-hidden">
+            <div class="absolute top-2 left-4 text-[10px] font-mono tracking-widest text-blue-200 uppercase font-bold">1º Nível • Macro</div>
+            <div class="text-lg font-black text-white flex items-center justify-center gap-2">
+              <svg class="w-5 h-5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+              <span>ASSUNTO (Macroárea Temática)</span>
+            </div>
+            <p class="text-xs text-blue-100 mt-1">Delimita a grande área de atuação do Ministério (ex: <em>Esporte, Corrupção, Assédio, TI, Apostas</em>)</p>
+          </div>
+
+          <!-- Connector Arrow -->
+          <div class="flex items-center justify-center text-blue-400">
+            <svg class="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+            <span class="text-[10px] uppercase font-mono text-slate-400 px-2 tracking-wider">Afunilamento de Dependência</span>
+          </div>
+
+          <!-- Funnel Stage 2: Subassunto -->
+          <div class="funnel-stage w-[86%] max-w-lg bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-700 border-2 border-emerald-400/50 rounded-2xl p-4 shadow-lg shadow-emerald-950/50 text-center relative overflow-hidden">
+            <div class="absolute top-2 left-4 text-[10px] font-mono tracking-widest text-emerald-200 uppercase font-bold">2º Nível • Contextual</div>
+            <div class="text-lg font-black text-white flex items-center justify-center gap-2">
+              <svg class="w-5 h-5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              <span>SUBASSUNTO (Especificação do Objeto)</span>
+            </div>
+            <p class="text-xs text-emerald-100 mt-1">Restrito ao assunto escolhido (ex: <em>Bolsa Atleta, Contratos e Contratações, Infraestrutura</em>)</p>
+          </div>
+
+          <!-- Connector Arrow -->
+          <div class="flex items-center justify-center text-emerald-400">
+            <svg class="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+            <span class="text-[10px] uppercase font-mono text-slate-400 px-2 tracking-wider">Refinamento Transversal</span>
+          </div>
+
+          <!-- Funnel Stage 3: Tags Globais -->
+          <div class="funnel-stage w-[70%] max-w-md bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 border-2 border-amber-300/60 rounded-2xl p-3.5 shadow-lg shadow-amber-950/50 text-center relative overflow-hidden text-slate-900">
+            <div class="text-[10px] font-mono tracking-widest text-amber-950 uppercase font-black">3º Nível • Multidimensional</div>
+            <div class="text-base font-black text-slate-950 flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+              <span>TAGS GLOBAIS (Atributos Universais)</span>
+            </div>
+            <p class="text-[11px] text-amber-950/90 font-medium">Independentes (<em>Modalidade, Tipo de Irregularidade, Unidade MESP, Entidade, Status</em>)</p>
+          </div>
+
+          <!-- Drop/Result Area -->
+          <div class="w-[50%] max-w-xs pt-1 flex flex-col items-center">
+            <div class="h-4 w-0.5 bg-gradient-to-b from-amber-400 to-cyan-400"></div>
+            <div class="bg-slate-900 border-2 border-cyan-400/80 rounded-xl px-4 py-2 text-center shadow-lg shadow-cyan-950/60 w-full">
+              <span class="text-[10px] uppercase font-bold tracking-wider text-cyan-400 block font-mono">Saída de Alto Valor</span>
+              <span class="text-xs font-bold text-white">Relatório Fala.BR Preciso & Ação Rápida</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: Explanation Column -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-5">
+            <h3 class="text-white font-bold text-base flex items-center gap-2">
+              <span class="text-blue-400">▸</span> O Princípio da Dependência Estrita
+            </h3>
+            <p class="text-slate-300 text-xs mt-2 leading-relaxed">
+              Diferente de sistemas planos, o <strong>Subassunto só existe atrelado ao seu Assunto</strong>. Se o usuário seleciona <em>"Corrupção"</em>, ele nunca verá subassuntos de <em>"Canais de atendimento"</em>, evitando ruído cadastral.
+            </p>
+          </div>
+
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-5">
+            <h3 class="text-white font-bold text-base flex items-center gap-2">
+              <span class="text-amber-400">▸</span> O Poder das TAGS Universais
+            </h3>
+            <p class="text-slate-300 text-xs mt-2 leading-relaxed">
+              As TAGS são <strong>desacopladas da árvore</strong>. Isso significa que tags como <code class="text-amber-300 bg-slate-800 px-1 rounded">Futebol</code>, <code class="text-amber-300 bg-slate-800 px-1 rounded">Suposta Irregularidade</code> ou <code class="text-amber-300 bg-slate-800 px-1 rounded">Coger</code> podem ser aplicadas em qualquer manifestação, permitindo cruzar dados analíticos em qualquer dimensão.
+            </p>
+          </div>
+
+          <div class="bg-gradient-to-r from-blue-900/30 to-emerald-900/30 border border-blue-800/40 rounded-xl p-4">
+            <div class="text-xs font-bold text-white mb-1">Exemplo de Extração no Fala.BR:</div>
+            <div class="text-[11px] font-mono text-slate-300 bg-slate-950/80 p-2.5 rounded border border-slate-800">
+              <span class="text-blue-400">Assunto:</span> Esporte<br>
+              <span class="text-emerald-400">Subassunto:</span> Bolsa Atleta<br>
+              <span class="text-amber-400">Tags:</span> [Atletas] [Atraso] [SNE]<br>
+              <span class="text-cyan-400">&rarr; Relatório imediato para a Secretaria Nacional de Excelência Esportiva</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 4: SIMULADOR INTERATIVO (ÁRVORE & TAGS AO VIVO)          -->
+    <!-- ============================================================== -->
+    <section class="slide flex-col justify-start w-full min-h-[80vh]" data-title="Simulador Interativo Fala.BR">
+      <div class="border-b border-slate-800 pb-3 mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <span class="text-xs font-bold text-emerald-400 tracking-wider uppercase flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            Simulador Interativo ao Vivo
+          </span>
+          <h2 class="text-2xl md:text-3xl font-extrabold text-white mt-0.5">Teste a Nova Estrutura na Prática</h2>
+        </div>
+        <button onclick="resetSimulation()" class="self-start sm:self-auto text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span>Limpar Simulação</span>
+        </button>
+      </div>
+
+      <!-- Quick Demo Presets Bar -->
+      <div class="mb-3.5 bg-slate-900/95 border border-slate-800 rounded-xl p-2.5 flex flex-col gap-1.5">
+        <div class="flex items-center justify-between text-[11px]">
+          <span class="text-amber-300 font-bold flex items-center gap-1.5">
+            <span>⚡</span>
+            <span>Simulações Rápidas (Carregar Casos Práticos de Reunião com 1 Clique):</span>
+          </span>
+          <span class="text-[10px] text-slate-400 font-mono">12 Casos Modelados</span>
+        </div>
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[10px]" id="casePresetsContainer">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </div>
+
+      <!-- Main Interactive Sandbox Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 items-start">
+
+        <!-- Coluna 1: Seleção de Assunto (8 assuntos reais) -->
+        <div class="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col h-[530px]">
+          <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-800">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-govblue-600 text-white flex items-center justify-center text-[10px]">1</span>
+              <span>1. Selecione o Assunto</span>
+            </h3>
+            <span class="text-[10px] text-slate-400 font-mono" id="assuntosCount">8 Assuntos</span>
+          </div>
+
+          <div class="space-y-1.5 overflow-y-auto pr-1 flex-1" id="assuntosListContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Coluna 2: Subassuntos Correspondentes (Dependência Dinâmica) -->
+        <div class="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col h-[530px]">
+          <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-800">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">2</span>
+              <span>2. Subassunto Vinculado</span>
+            </h3>
+            <span class="text-[10px] text-emerald-400 font-mono" id="subassuntosCount">Depende do Assunto</span>
+          </div>
+
+          <div id="subassuntosListContainer" class="space-y-1.5 overflow-y-auto pr-1 flex-1">
+            <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500">
+              <svg class="w-10 h-10 mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+              <p class="text-xs font-medium text-slate-400">Nenhum Assunto selecionado</p>
+              <p class="text-[11px] text-slate-500 mt-1">Clique em um assunto ao lado para carregar seus subassuntos específicos.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coluna 3: Tags Recomendadas, Universais & Resumo da Ocorrência -->
+        <div class="lg:col-span-4 flex flex-col gap-3 h-[530px]">
+          
+          <!-- Tags Picker Container -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 flex-1 flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-800">
+              <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-amber-500 text-slate-900 font-bold flex items-center justify-center text-[10px]">3</span>
+                <span>TAGS & Inteligência</span>
+              </h3>
+              <span class="text-[10px] text-amber-400 font-mono">Transversais</span>
+            </div>
+
+            <!-- Bloco Dinâmico: Tags Recomendadas para o Contexto -->
+            <div id="recommendedTagsSection" class="mb-2 p-2 rounded-xl bg-gradient-to-r from-amber-950/40 to-slate-900 border border-amber-500/30 transition">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[10px] font-bold text-amber-300 flex items-center gap-1">
+                  <span>⭐</span>
+                  <span>Tags Recomendadas para este contexto:</span>
+                </span>
+                <button onclick="applyAllRecommendedTags()" id="applyAllRecBtn" class="text-[9px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-1.5 py-0.5 rounded border border-amber-500/40 font-mono transition disabled:opacity-40">
+                  ⚡ Marcar Todas
+                </button>
+              </div>
+              <div id="recommendedTagsList" class="flex flex-wrap gap-1 max-h-16 overflow-y-auto pr-0.5">
+                <span class="text-[10px] text-slate-500 italic">Selecione um subassunto para ver sugestões inteligentes.</span>
+              </div>
+            </div>
+
+            <!-- Tag category pills filter (12 categorias) -->
+            <div class="text-[10px] text-slate-400 font-medium mb-1 flex items-center justify-between">
+              <span>Catálogo Completo por Categoria:</span>
+            </div>
+            <div id="tagCategoryContainer" class="flex items-center gap-1.5 overflow-x-auto pb-1.5 mb-2 no-scrollbar text-[10px]">
+              <!-- Gerado via JS com as 12 categorias oficiais -->
+            </div>
+
+            <!-- Tags Cloud container -->
+            <div id="tagsCloudContainer" class="flex flex-wrap gap-1.5 overflow-y-auto pr-1 flex-1 content-start">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Live Fala.BR Record Preview -->
+          <div class="bg-gradient-to-br from-slate-900 to-govblue-950/80 border-2 border-blue-500/40 rounded-xl p-3 shadow-md">
+            <div class="flex items-center justify-between text-[10px] uppercase font-mono text-blue-300 font-bold mb-1">
+              <span>Ficha Montada Fala.BR</span>
+              <span class="bg-blue-600/30 text-blue-200 px-1.5 py-0.5 rounded border border-blue-500/30">Pronto p/ Relatório</span>
+            </div>
+
+            <div id="previewTextoManifestacao" class="hidden text-[10px] text-slate-300 italic bg-slate-950/80 p-1.5 rounded border border-slate-800 mb-1.5 leading-snug">
+              <!-- Caso prático citado -->
+            </div>
+
+            <div class="space-y-0.5 text-xs">
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-slate-400 font-medium text-[10px]">Assunto:</span>
+                <span class="text-white font-bold text-[11px]" id="previewAssunto">Nenhum</span>
+              </div>
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-slate-400 font-medium text-[10px]">Subassunto:</span>
+                <span class="text-emerald-300 font-bold text-[11px]" id="previewSubassunto">Nenhum</span>
+              </div>
+              <div class="flex flex-col gap-0.5 pt-1 border-t border-slate-800">
+                <span class="text-slate-400 text-[9px]">TAGS Marcadas:</span>
+                <div id="previewTagsList" class="flex flex-wrap gap-1 text-[10px] text-amber-200">
+                  <span class="text-slate-500 italic">Nenhuma tag marcada</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 5: VISÃO GERAL DOS 8 ASSUNTOS E SEUS SUBASSUNTOS         -->
+    <!-- ============================================================== -->
+    <section class="slide flex-col justify-start w-full min-h-[75vh]" data-title="Mapeamento dos 8 Assuntos">
+      <div class="border-b border-slate-800 pb-3 mb-4">
+        <span class="text-xs font-bold text-govblue-400 tracking-wider uppercase">Estrutura Completa</span>
+        <h2 class="text-3xl font-extrabold text-white mt-0.5">Os 8 Grandes Assuntos e seus Subassuntos</h2>
+        <p class="text-slate-400 text-sm mt-0.5">Mapeamento temático abrangente para atender todas as tipologias de manifestações do Ministério do Esporte.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 flex-1 overflow-y-auto max-h-[62vh] pr-1">
+        
+        <!-- Card 1: Assédio Moral -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between hover:border-slate-700 transition">
+          <div>
+            <div class="text-xs font-bold text-rose-300 flex items-center justify-between">
+              <span>Assédio moral</span>
+              <span class="text-[10px] bg-rose-950 text-rose-300 px-1.5 py-0.5 rounded border border-rose-800">Sensível</span>
+            </div>
+            <ul class="mt-2.5 space-y-1.5 text-xs text-slate-300">
+              <li class="flex items-center gap-1.5 text-slate-300">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                <span>Relação entre agentes públicos</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[10px] text-slate-400">
+            Encaminhamento: <strong>Comissão de Ética / Coger</strong>
+          </div>
+        </div>
+
+        <!-- Card 2: Assédio Sexual -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between hover:border-slate-700 transition">
+          <div>
+            <div class="text-xs font-bold text-rose-300 flex items-center justify-between">
+              <span>Assédio sexual</span>
+              <span class="text-[10px] bg-rose-950 text-rose-300 px-1.5 py-0.5 rounded border border-rose-800">Sensível</span>
+            </div>
+            <ul class="mt-2.5 space-y-1.5 text-xs text-slate-300">
+              <li class="flex items-center gap-1.5 text-slate-300">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                <span>Relação entre agentes públicos</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[10px] text-slate-400">
+            Encaminhamento: <strong>Coger / Protocolo Seguro</strong>
+          </div>
+        </div>
+
+        <!-- Card 3: Atendimento ao público -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between hover:border-slate-700 transition">
+          <div>
+            <div class="text-xs font-bold text-blue-300 flex items-center justify-between">
+              <span>Atendimento ao público</span>
+              <span class="text-[10px] bg-blue-950 text-blue-300 px-1.5 py-0.5 rounded border border-blue-800">Cidadão</span>
+            </div>
+            <ul class="mt-2.5 space-y-1.5 text-xs text-slate-300">
+              <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>Disque Esporte</li>
+              <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>Ouvidoria</li>
+            </ul>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[10px] text-slate-400">
+            Foco: Qualidade da resposta e prazos
+          </div>
+        </div>
+
+        <!-- Card 4: Canais de atendimento -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between hover:border-slate-700 transition">
+          <div>
+            <div class="text-xs font-bold text-blue-300 flex items-center justify-between">
+              <span>Canais de atendimento</span>
+              <span class="text-[10px] bg-blue-950 text-blue-300 px-1.5 py-0.5 rounded border border-blue-800">Plataformas</span>
+            </div>
+            <ul class="mt-2.5 space-y-1.5 text-xs text-slate-300">
+              <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>Disque Esporte</li>
+              <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>Ouvidoria</li>
+              <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>Fala.BR</li>
+            </ul>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[10px] text-slate-400">
+            Foco: Disponibilidade e usabilidade dos canais
+          </div>
+        </div>
+
+        <!-- Card 5: Esporte (Macro) -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between hover:border-slate-700 transition md:col-span-2">
+          <div>
+            <div class="text-xs font-bold text-emerald-300 flex items-center justify-between">
+              <span>Esporte (Área Finalística Central)</span>
+              <span class="text-[10px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-800">17 Subassuntos</span>
+            </div>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 mt-2.5 text-[11px] text-slate-300">
+              <div>• Bolsa Atleta</div>
+              <div>• Bolsa Pódio</div>
+              <div>• Atletas</div>
+              <div>• Modalidades Esportivas</div>
+              <div>• Entidades Desportivas</div>
+              <div>• Competições e Eventos</div>
+              <div>• Olimpíadas e Ciclo Olímpico</div>
+              <div>• Paralimpíadas e Ciclo</div>
+              <div>• Futebol Feminino</div>
+              <div>• Paradesporto</div>
+              <div>• Esporte Seguro</div>
+              <div>• Esporte Comunitário</div>
+              <div>• Lei de Incentivo ao Esporte</div>
+              <div>• Projetos Esportivos</div>
+              <div>• Editais e Chamamentos</div>
+              <div>• Infraestrutura Esportiva</div>
+              <div class="col-span-2 text-emerald-400 font-semibold">• Rede de Desenvolvimento do Esporte *</div>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[10px] text-slate-400">
+            Secretarias: <strong>SNE, SNPAR, SNEAELIS, SNFDT, DPPIE, DIE</strong>
+          </div>
+        </div>
+
+        <!-- Card 6: TI e Sistemas -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between hover:border-slate-700 transition">
+          <div>
+            <div class="text-xs font-bold text-cyan-300 flex items-center justify-between">
+              <span>Tecnologia da Informação e Sistemas</span>
+              <span class="text-[10px] bg-cyan-950 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-800">Sistemas</span>
+            </div>
+            <ul class="mt-2.5 space-y-1.5 text-xs text-slate-300">
+              <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>Sistema Bolsa Atleta</li>
+              <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>Sistema SLIE (Lei Incentivo)</li>
+              <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>Protocolo Digital</li>
+              <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>Portal do MESP</li>
+            </ul>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[10px] text-slate-400">
+            Unidade: <strong>CGTI / Suporte Técnico</strong>
+          </div>
+        </div>
+
+        <!-- Card 7: Prêmios e Apostas -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between hover:border-slate-700 transition">
+          <div>
+            <div class="text-xs font-bold text-amber-300 flex items-center justify-between">
+              <span>Prêmios e Apostas</span>
+              <span class="text-[10px] bg-amber-950 text-amber-300 px-1.5 py-0.5 rounded border border-amber-800">Estratégico</span>
+            </div>
+            <ul class="mt-2.5 space-y-1.5 text-xs text-slate-300">
+              <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Regulamentação e Fiscalização</li>
+            </ul>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[10px] text-slate-400">
+            Secretaria: <strong>SNAEDE (Apostas Esportivas)</strong>
+          </div>
+        </div>
+
+        <!-- Card 8: Corrupção -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between hover:border-slate-700 transition md:col-span-2">
+          <div>
+            <div class="text-xs font-bold text-rose-400 flex items-center justify-between">
+              <span>Corrupção (Integridade e Controle)</span>
+              <span class="text-[10px] bg-rose-950 text-rose-300 px-1.5 py-0.5 rounded border border-rose-800">Denúncias Críticas</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-2.5 text-xs text-slate-300">
+              <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>Contratos e Contratações Públicas</div>
+              <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>Parcerias, Convênios e Repasses</div>
+              <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>Gestão de Recursos Públicos</div>
+              <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>Conduta e Benefícios Indevidos</div>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[10px] text-slate-400">
+            Tratamento imediato: <strong>Corregedoria (Coger) / CGU / Polícia Federal</strong>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 6: ARQUITETURA DAS TAGS GLOBAIS UNIVERSAIS               -->
+    <!-- ============================================================== -->
+    <section class="slide flex-col justify-start w-full min-h-[75vh]" data-title="Arquitetura de Tags Globais">
+      <div class="border-b border-slate-800 pb-3 mb-4">
+        <span class="text-xs font-bold text-amber-400 tracking-wider uppercase">Filtros Cruzados</span>
+        <h2 class="text-3xl font-extrabold text-white mt-0.5">As 12 Famílias de TAGS Universais</h2>
+        <p class="text-slate-400 text-sm mt-0.5">Permitem cruzar qualquer assunto com entidades, modalidades, tipos de denúncia e órgãos competentes.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 flex-1 overflow-y-auto max-h-[62vh] pr-1">
+        
+        <!-- 1. Entidades esportivas -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition">
+          <div class="text-[11px] font-bold text-purple-300 uppercase tracking-wide flex items-center justify-between mb-1.5">
+            <span>🏛️ 1. Entidades Esportivas</span>
+            <span class="text-[9px] bg-purple-950 text-purple-300 px-1 rounded font-mono">Geral</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded">Confederação</span>
+            <span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded">Federação</span>
+            <span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded">Associação</span>
+            <span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded">Clube</span>
+            <span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded">Liga</span>
+            <span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded">Organização Esportiva</span>
+          </div>
+        </div>
+
+        <!-- 2. Entidades específicas -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition">
+          <div class="text-[11px] font-bold text-purple-300 uppercase tracking-wide flex items-center justify-between mb-1.5">
+            <span>🏆 2. Entidades Específicas</span>
+            <span class="text-[9px] bg-purple-950 text-purple-300 px-1 rounded font-mono">Confederações</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded">CBF (Futebol)</span>
+            <span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded">CBAt (Atletismo)</span>
+            <span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded">CBTM (Tênis de Mesa)</span>
+            <span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded">Skateboarding</span>
+            <span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded">Beach Tennis</span>
+            <span class="bg-purple-950/60 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded">Jiu-Jitsu</span>
+          </div>
+        </div>
+
+        <!-- 3. Modalidades esportivas -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition">
+          <div class="text-[11px] font-bold text-emerald-300 uppercase tracking-wide flex items-center justify-between mb-1.5">
+            <span>🏅 3. Modalidades Esportivas</span>
+            <span class="text-[9px] bg-emerald-950 text-emerald-300 px-1 rounded font-mono">23 Práticas</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <span class="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-1.5 py-0.5 rounded">Futebol</span>
+            <span class="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-1.5 py-0.5 rounded">Atletismo</span>
+            <span class="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-1.5 py-0.5 rounded">Basquete</span>
+            <span class="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-1.5 py-0.5 rounded">Judô</span>
+            <span class="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-1.5 py-0.5 rounded">Natação</span>
+            <span class="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-1.5 py-0.5 rounded">Vôlei</span>
+            <span class="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-1.5 py-0.5 rounded">Skate</span>
+            <span class="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-1.5 py-0.5 rounded">Esports</span>
+          </div>
+        </div>
+
+        <!-- 4. Pessoas / público -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition">
+          <div class="text-[11px] font-bold text-cyan-300 uppercase tracking-wide flex items-center justify-between mb-1.5">
+            <span>👤 4. Pessoas / Público</span>
+            <span class="text-[9px] bg-cyan-950 text-cyan-300 px-1 rounded font-mono">Atores</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <span class="bg-cyan-950/60 text-cyan-300 border border-cyan-800/60 px-1.5 py-0.5 rounded">Atletas</span>
+            <span class="bg-cyan-950/60 text-cyan-300 border border-cyan-800/60 px-1.5 py-0.5 rounded">Servidor</span>
+            <span class="bg-cyan-950/60 text-cyan-300 border border-cyan-800/60 px-1.5 py-0.5 rounded">Torcedor</span>
+            <span class="bg-cyan-950/60 text-cyan-300 border border-cyan-800/60 px-1.5 py-0.5 rounded">Proponente</span>
+          </div>
+        </div>
+
+        <!-- 5. Natureza da demanda -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition">
+          <div class="text-[11px] font-bold text-blue-300 uppercase tracking-wide flex items-center justify-between mb-1.5">
+            <span>📑 5. Natureza da Demanda</span>
+            <span class="text-[9px] bg-blue-950 text-blue-300 px-1 rounded font-mono">Processos</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-1.5 py-0.5 rounded">Inscrição / Cadastro</span>
+            <span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-1.5 py-0.5 rounded">Prestação de contas</span>
+            <span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-1.5 py-0.5 rounded">Repasse / Pagamento</span>
+            <span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-1.5 py-0.5 rounded">Edital / Chamamento</span>
+            <span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-1.5 py-0.5 rounded">Termo de Fomento</span>
+          </div>
+        </div>
+
+        <!-- 6. Problemas / irregularidades -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition">
+          <div class="text-[11px] font-bold text-rose-300 uppercase tracking-wide flex items-center justify-between mb-1.5">
+            <span>🚨 6. Problemas / Irregularidades</span>
+            <span class="text-[9px] bg-rose-950 text-rose-300 px-1 rounded font-mono">Denúncias</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <span class="bg-rose-950/60 text-rose-300 border border-rose-800/60 px-1.5 py-0.5 rounded">Atraso / Inconsistência</span>
+            <span class="bg-rose-950/60 text-rose-300 border border-rose-800/60 px-1.5 py-0.5 rounded">Suposta Irregularidade</span>
+            <span class="bg-rose-950/60 text-rose-300 border border-rose-800/60 px-1.5 py-0.5 rounded">Recebimento Indevido</span>
+            <span class="bg-rose-950/60 text-rose-300 border border-rose-800/60 px-1.5 py-0.5 rounded">Manipulação Resultados</span>
+            <span class="bg-rose-950/60 text-rose-300 border border-rose-800/60 px-1.5 py-0.5 rounded">Assédio / Fraudes</span>
+          </div>
+        </div>
+
+        <!-- 7. Infraestrutura / equipamentos -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition">
+          <div class="text-[11px] font-bold text-amber-300 uppercase tracking-wide flex items-center justify-between mb-1.5">
+            <span>🏗️ 7. Infraestrutura / Equipamentos</span>
+            <span class="text-[9px] bg-amber-950 text-amber-300 px-1 rounded font-mono">Obras</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <span class="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.5 rounded">Ginásio / Quadra</span>
+            <span class="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.5 rounded">Centro Olímpico</span>
+            <span class="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.5 rounded">Obra / Reforma</span>
+            <span class="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.5 rounded">Acessibilidade</span>
+            <span class="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.5 rounded">Materiais</span>
+          </div>
+        </div>
+
+        <!-- 8. Inclusão / políticas -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition">
+          <div class="text-[11px] font-bold text-teal-300 uppercase tracking-wide flex items-center justify-between mb-1.5">
+            <span>♿ 8. Inclusão / Políticas</span>
+            <span class="text-[9px] bg-teal-950 text-teal-300 px-1 rounded font-mono">Social</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <span class="bg-teal-950/60 text-teal-300 border border-teal-800/60 px-1.5 py-0.5 rounded">Inclusão</span>
+            <span class="bg-teal-950/60 text-teal-300 border border-teal-800/60 px-1.5 py-0.5 rounded">Paradesporto</span>
+            <span class="bg-teal-950/60 text-teal-300 border border-teal-800/60 px-1.5 py-0.5 rounded">Modalidades</span>
+            <span class="bg-teal-950/60 text-teal-300 border border-teal-800/60 px-1.5 py-0.5 rounded">Categoria</span>
+            <span class="bg-teal-950/60 text-teal-300 border border-teal-800/60 px-1.5 py-0.5 rounded">Academia</span>
+          </div>
+        </div>
+
+        <!-- 9. Comunicação / atendimento -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition">
+          <div class="text-[11px] font-bold text-sky-300 uppercase tracking-wide flex items-center justify-between mb-1.5">
+            <span>📞 9. Comunicação / Atendimento</span>
+            <span class="text-[9px] bg-sky-950 text-sky-300 px-1 rounded font-mono">Canais</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <span class="bg-sky-950/60 text-sky-300 border border-sky-800/60 px-1.5 py-0.5 rounded">Disque Esporte</span>
+            <span class="bg-sky-950/60 text-sky-300 border border-sky-800/60 px-1.5 py-0.5 rounded">Fala.BR</span>
+            <span class="bg-sky-950/60 text-sky-300 border border-sky-800/60 px-1.5 py-0.5 rounded">Redes Sociais</span>
+            <span class="bg-sky-950/60 text-sky-300 border border-sky-800/60 px-1.5 py-0.5 rounded">OFÍCIO</span>
+            <span class="bg-sky-950/60 text-sky-300 border border-sky-800/60 px-1.5 py-0.5 rounded">Audiência - MESP</span>
+          </div>
+        </div>
+
+        <!-- 10. Documentos / administrativas -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition">
+          <div class="text-[11px] font-bold text-slate-300 uppercase tracking-wide flex items-center justify-between mb-1.5">
+            <span>📄 10. Documentos / Admin</span>
+            <span class="text-[9px] bg-slate-800 text-slate-300 px-1 rounded font-mono">Peças</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <span class="bg-slate-800 text-slate-300 border border-slate-700 px-1.5 py-0.5 rounded">Declaração / Listagem</span>
+            <span class="bg-slate-800 text-slate-300 border border-slate-700 px-1.5 py-0.5 rounded">Estatuto / Regimento</span>
+            <span class="bg-slate-800 text-slate-300 border border-slate-700 px-1.5 py-0.5 rounded">Informe de Rendimentos</span>
+            <span class="bg-slate-800 text-slate-300 border border-slate-700 px-1.5 py-0.5 rounded">Certificado</span>
+          </div>
+        </div>
+
+        <!-- 11. Tratamento / fluxo interno -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition">
+          <div class="text-[11px] font-bold text-orange-300 uppercase tracking-wide flex items-center justify-between mb-1.5">
+            <span>⏳ 11. Tratamento / Fluxo Interno</span>
+            <span class="text-[9px] bg-orange-950 text-orange-300 px-1 rounded font-mono">Status</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <span class="bg-orange-950/60 text-orange-300 border border-orange-800/60 px-1.5 py-0.5 rounded">AGUARDANDO ORIENTAÇÃO</span>
+            <span class="bg-orange-950/60 text-orange-300 border border-orange-800/60 px-1.5 py-0.5 rounded">Análise Técnica</span>
+            <span class="bg-orange-950/60 text-orange-300 border border-orange-800/60 px-1.5 py-0.5 rounded">Duplicidade</span>
+            <span class="bg-orange-950/60 text-orange-300 border border-orange-800/60 px-1.5 py-0.5 rounded">Fora de competência</span>
+          </div>
+        </div>
+
+        <!-- 12. Institucionais / unidades -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition">
+          <div class="text-[11px] font-bold text-blue-300 uppercase tracking-wide flex items-center justify-between mb-1.5">
+            <span>🏢 12. Unidades / Secretarias MESP</span>
+            <span class="text-[9px] bg-blue-950 text-blue-300 px-1 rounded font-mono">Órgãos</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-1.5 py-0.5 rounded">SNAEDE (Apostas)</span>
+            <span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-1.5 py-0.5 rounded">SNPAR (Paradesporto)</span>
+            <span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-1.5 py-0.5 rounded">SNE (Excelência)</span>
+            <span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-1.5 py-0.5 rounded">Coger / Ética (CE)</span>
+            <span class="bg-blue-950/60 text-blue-300 border border-blue-800/60 px-1.5 py-0.5 rounded">SNFDT / SNEAELIS / DIE</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 7: CASOS DE USO PRÁTICOS (DENÚNCIAS NO MESP)             -->
+    <!-- ============================================================== -->
+    <section class="slide flex-col justify-start w-full min-h-[75vh]" data-title="Casos Práticos de Denúncias">
+      <div class="border-b border-slate-800 pb-3 mb-4">
+        <span class="text-xs font-bold text-rose-400 tracking-wider uppercase">Aplicação Real</span>
+        <h2 class="text-3xl font-extrabold text-white mt-0.5">Casos Práticos: Da Denúncia ao Relatório Fala.BR</h2>
+        <p class="text-slate-400 text-sm mt-0.5">Veja como manifestações complexas passam a ser classificadas com precisão cirúrgica.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+        
+        <!-- Caso 1 -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-govblue-500/50 transition">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span> Caso 1: Denúncia de Desvio em Convênio
+              </span>
+              <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">Fala.BR #2026-001</span>
+            </div>
+            <p class="text-xs text-slate-300 italic bg-slate-950/60 p-2.5 rounded border border-slate-800/80 mb-3">
+              "Cidadão denuncia que recursos repassados para a reforma de um centro olímpico municipal estão sendo desviados pela entidade executora sem prestar contas."
+            </p>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex items-center gap-2"><strong class="text-slate-400 w-24">Assunto:</strong> <span class="text-blue-300 font-semibold">Corrupção</span></div>
+              <div class="flex items-center gap-2"><strong class="text-slate-400 w-24">Subassunto:</strong> <span class="text-emerald-300 font-semibold">Parcerias, Convênios e Repasses</span></div>
+              <div class="flex items-start gap-2"><strong class="text-slate-400 w-24">TAGS:</strong> 
+                <span class="flex flex-wrap gap-1 text-[10px]">
+                  <span class="bg-amber-950/80 text-amber-300 px-1 rounded">Prestação de contas</span>
+                  <span class="bg-amber-950/80 text-amber-300 px-1 rounded">Centro Olímpico</span>
+                  <span class="bg-rose-950/80 text-rose-300 px-1 rounded">Suposta Irregularidade</span>
+                  <span class="bg-blue-950/80 text-blue-300 px-1 rounded">Coger</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-emerald-400 flex items-center gap-1">
+            <span>✓ Extração imediata para auditoria conjunta com CGU.</span>
+          </div>
+        </div>
+
+        <!-- Caso 2 -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-govblue-500/50 transition">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span> Caso 2: Suspeita de Manipulação em Apostas
+              </span>
+              <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">Fala.BR #2026-002</span>
+            </div>
+            <p class="text-xs text-slate-300 italic bg-slate-950/60 p-2.5 rounded border border-slate-800/80 mb-3">
+              "Torcedor aponta indícios de manipulação de resultados em partida de campeonato regional ligada a sites ilegais de apostas esportivas."
+            </p>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex items-center gap-2"><strong class="text-slate-400 w-24">Assunto:</strong> <span class="text-blue-300 font-semibold">Prêmios e Apostas</span></div>
+              <div class="flex items-center gap-2"><strong class="text-slate-400 w-24">Subassunto:</strong> <span class="text-emerald-300 font-semibold">Regulamentação e Fiscalização</span></div>
+              <div class="flex items-start gap-2"><strong class="text-slate-400 w-24">TAGS:</strong> 
+                <span class="flex flex-wrap gap-1 text-[10px]">
+                  <span class="bg-amber-950/80 text-amber-300 px-1 rounded">Suposta Manipulação de Resultados</span>
+                  <span class="bg-emerald-950/80 text-emerald-300 px-1 rounded">Futebol</span>
+                  <span class="bg-blue-950/80 text-blue-300 px-1 rounded">SNAEDE</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-emerald-400 flex items-center gap-1">
+            <span>✓ Encaminhamento automático ao painel de inteligência da SNAEDE.</span>
+          </div>
+        </div>
+
+        <!-- Caso 3 -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-govblue-500/50 transition">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span> Caso 3: Assédio Moral Funcional
+              </span>
+              <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">Fala.BR #2026-003</span>
+            </div>
+            <p class="text-xs text-slate-300 italic bg-slate-950/60 p-2.5 rounded border border-slate-800/80 mb-3">
+              "Servidora relata perseguição e constrangimento sistemático por parte de chefia imediata no ambiente de trabalho do ministério."
+            </p>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex items-center gap-2"><strong class="text-slate-400 w-24">Assunto:</strong> <span class="text-blue-300 font-semibold">Assédio moral</span></div>
+              <div class="flex items-center gap-2"><strong class="text-slate-400 w-24">Subassunto:</strong> <span class="text-emerald-300 font-semibold">Relação entre agentes públicos</span></div>
+              <div class="flex items-start gap-2"><strong class="text-slate-400 w-24">TAGS:</strong> 
+                <span class="flex flex-wrap gap-1 text-[10px]">
+                  <span class="bg-cyan-950/80 text-cyan-300 px-1 rounded">Servidor</span>
+                  <span class="bg-rose-950/80 text-rose-300 px-1 rounded">Assédio Moral</span>
+                  <span class="bg-purple-950/80 text-purple-300 px-1 rounded">CE</span>
+                  <span class="bg-purple-950/80 text-purple-300 px-1 rounded">Coger</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-emerald-400 flex items-center gap-1">
+            <span>✓ Tratamento sigiloso e encaminhamento à Comissão de Ética.</span>
+          </div>
+        </div>
+
+        <!-- Caso 4 -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-govblue-500/50 transition">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-blue-500"></span> Caso 4: Erro no Pagamento de Bolsa Atleta
+              </span>
+              <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">Fala.BR #2026-004</span>
+            </div>
+            <p class="text-xs text-slate-300 italic bg-slate-950/60 p-2.5 rounded border border-slate-800/80 mb-3">
+              "Atleta paralímpico informa atraso de parcelas do benefício decorrente de inconsistência cadastral bancária no sistema."
+            </p>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex items-center gap-2"><strong class="text-slate-400 w-24">Assunto:</strong> <span class="text-blue-300 font-semibold">Esporte</span></div>
+              <div class="flex items-center gap-2"><strong class="text-slate-400 w-24">Subassunto:</strong> <span class="text-emerald-300 font-semibold">Bolsa Atleta</span></div>
+              <div class="flex items-start gap-2"><strong class="text-slate-400 w-24">TAGS:</strong> 
+                <span class="flex flex-wrap gap-1 text-[10px]">
+                  <span class="bg-cyan-950/80 text-cyan-300 px-1 rounded">Atletas</span>
+                  <span class="bg-emerald-950/80 text-emerald-300 px-1 rounded">Paradesporto</span>
+                  <span class="bg-rose-950/80 text-rose-300 px-1 rounded">Atraso</span>
+                  <span class="bg-blue-950/80 text-blue-300 px-1 rounded">SNE</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-emerald-400 flex items-center gap-1">
+            <span>✓ Localização instantânea pelo filtro de dados do Fala.BR.</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 8: INTELIGÊNCIA ANALÍTICA & CRUZAMENTOS DE DADOS         -->
+    <!-- ============================================================== -->
+    <section class="slide flex-col justify-start w-full min-h-[75vh]" data-title="Inteligência Analítica & Cruzamentos">
+      <div class="border-b border-slate-800 pb-3 mb-4">
+        <span class="text-xs font-bold text-cyan-400 tracking-wider uppercase">Poder dos Relatórios Fala.BR</span>
+        <h2 class="text-2xl md:text-3xl font-extrabold text-white mt-0.5">Cruzamentos Analíticos: Do Texto Livre aos Dados Estruturados</h2>
+        <p class="text-slate-400 text-xs sm:text-sm mt-0.5">Como a classificação por TAGS elimina a leitura manual e gera relatórios executivos instantâneos.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 overflow-y-auto max-h-[62vh] pr-1">
+        
+        <!-- Bloco 1: Ranking por Entidade -->
+        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-800">
+              <span class="text-xs font-bold text-purple-300">📊 1. Ranking por Entidade</span>
+              <span class="text-[9px] bg-purple-950 text-purple-300 px-1 rounded font-mono">Volume</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mb-2">Com Tags padronizadas, o Fala.BR consolida rankings sem duplicidades:</p>
+            <div class="space-y-1.5 text-xs font-mono">
+              <div class="flex items-center justify-between bg-slate-950/70 p-1.5 rounded border border-slate-800">
+                <span class="text-purple-300 truncate">CBF</span>
+                <span class="text-white font-bold bg-purple-900/60 px-1.5 py-0.5 rounded">40</span>
+              </div>
+              <div class="flex items-center justify-between bg-slate-950/70 p-1.5 rounded border border-slate-800">
+                <span class="text-slate-300 truncate">Federação X</span>
+                <span class="text-white font-bold bg-slate-800 px-1.5 py-0.5 rounded">25</span>
+              </div>
+              <div class="flex items-center justify-between bg-slate-950/70 p-1.5 rounded border border-slate-800">
+                <span class="text-slate-300 truncate">Associação Y</span>
+                <span class="text-white font-bold bg-slate-800 px-1.5 py-0.5 rounded">18</span>
+              </div>
+              <div class="flex items-center justify-between bg-slate-950/70 p-1.5 rounded border border-slate-800">
+                <span class="text-slate-300 truncate">Clube Z</span>
+                <span class="text-white font-bold bg-slate-800 px-1.5 py-0.5 rounded">12</span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-2.5 pt-2 border-t border-slate-800 text-[10px] text-purple-300 italic">
+            Pergunta respondida: "Qual entidade recebe mais demandas?"
+          </div>
+        </div>
+
+        <!-- Bloco 2: Cruzamento Entidade x Problema -->
+        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-800">
+              <span class="text-xs font-bold text-amber-300">🔍 2. Entidade + Problema</span>
+              <span class="text-[9px] bg-amber-950 text-amber-300 px-1 rounded font-mono">Causa Raiz</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mb-2">Descobre <strong>por qual motivo</strong> a entidade é citada:</p>
+            <div class="space-y-1 text-xs">
+              <div class="bg-slate-950/70 p-1.5 rounded border border-slate-800 flex justify-between items-center">
+                <span class="text-rose-400 text-[11px]">Suposta Irregularidade</span>
+                <span class="text-white font-mono font-bold bg-rose-950 px-1.5 py-0.5 rounded">20</span>
+              </div>
+              <div class="bg-slate-950/70 p-1.5 rounded border border-slate-800 flex justify-between items-center">
+                <span class="text-amber-400 text-[11px]">Pagamento</span>
+                <span class="text-white font-mono font-bold bg-amber-950 px-1.5 py-0.5 rounded">8</span>
+              </div>
+              <div class="bg-slate-950/70 p-1.5 rounded border border-slate-800 flex justify-between items-center">
+                <span class="text-blue-400 text-[11px]">Atraso</span>
+                <span class="text-white font-mono font-bold bg-blue-950 px-1.5 py-0.5 rounded">5</span>
+              </div>
+              <div class="bg-slate-950/70 p-1.5 rounded border border-slate-800 flex justify-between items-center">
+                <span class="text-emerald-400 text-[11px]">Conduta Inadequada</span>
+                <span class="text-white font-mono font-bold bg-emerald-950 px-1.5 py-0.5 rounded">4</span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-2.5 pt-2 border-t border-slate-800 text-[10px] text-amber-300 italic">
+            Pergunta respondida: "Por que motivo essa entidade é citada?"
+          </div>
+        </div>
+
+        <!-- Bloco 3: Cruzamento Modalidade x Problema -->
+        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-800">
+              <span class="text-xs font-bold text-emerald-300">🏅 3. Modalidade + Problema</span>
+              <span class="text-[9px] bg-emerald-950 text-emerald-300 px-1 rounded font-mono">Padrões</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mb-2">Identificação de vulnerabilidades setoriais:</p>
+            <div class="overflow-x-auto">
+              <table class="w-full text-[10px] text-left border border-slate-800 rounded">
+                <thead class="bg-slate-950 text-slate-300">
+                  <tr>
+                    <th class="p-1">Modalidade</th>
+                    <th class="p-1 text-center">Atraso</th>
+                    <th class="p-1 text-center">Irregul.</th>
+                    <th class="p-1 text-center">Assédio</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800 font-mono">
+                  <tr>
+                    <td class="p-1 text-white font-sans">Futebol</td>
+                    <td class="p-1 text-center text-blue-300">30</td>
+                    <td class="p-1 text-center text-rose-300">22</td>
+                    <td class="p-1 text-center text-amber-300">8</td>
+                  </tr>
+                  <tr>
+                    <td class="p-1 text-white font-sans">Atletismo</td>
+                    <td class="p-1 text-center text-blue-300">18</td>
+                    <td class="p-1 text-center text-rose-300">10</td>
+                    <td class="p-1 text-center text-amber-300">3</td>
+                  </tr>
+                  <tr>
+                    <td class="p-1 text-white font-sans">Natação</td>
+                    <td class="p-1 text-center text-blue-300">12</td>
+                    <td class="p-1 text-center text-rose-300">6</td>
+                    <td class="p-1 text-center text-amber-300">2</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="mt-2.5 pt-2 border-t border-slate-800 text-[10px] text-emerald-300 italic">
+            Pergunta respondida: "Quais esportes concentram mais denúncias?"
+          </div>
+        </div>
+
+        <!-- Banner de Usabilidade: Distinção Crucial de Assédio -->
+        <div class="lg:col-span-12 bg-gradient-to-r from-govblue-950/80 via-slate-900 to-govblue-950/80 border border-govblue-500/40 rounded-xl p-3.5">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-sm">💡</span>
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider">Diferenciação Crucial de Usabilidade: Assédio no Trabalho vs. no Esporte</h4>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 text-xs">
+            <div class="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-rose-400 font-bold block mb-0.5">Assédio entre Agentes Públicos (Servidores):</span>
+              <p class="text-slate-300 text-[11px]">→ <strong>Assunto:</strong> Assédio moral / sexual | <strong>Sub:</strong> Relação entre agentes públicos | <strong>Encaminhamento:</strong> Comissão de Ética / Coger.</p>
+            </div>
+            <div class="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-emerald-400 font-bold block mb-0.5">Assédio no Ambiente Esportivo (Atletas/Clubes):</span>
+              <p class="text-slate-300 text-[11px]">→ <strong>Assunto:</strong> Esporte | <strong>Sub:</strong> Esporte Seguro | <strong>Tags:</strong> Atletas, Clube, Assédio Sexual | <strong>Encaminhamento:</strong> Políticas de Proteção ao Esporte.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 9: DIRETRIZES DE GOVERNANÇA & PONTOS DE VALIDAÇÃO        -->
+    <!-- ============================================================== -->
+    <section class="slide flex-col justify-start w-full min-h-[75vh]" data-title="Diretrizes & Validação">
+      <div class="border-b border-slate-800 pb-3 mb-4">
+        <span class="text-xs font-bold text-amber-400 tracking-wider uppercase">Boas Práticas de Gestão</span>
+        <h2 class="text-2xl md:text-3xl font-extrabold text-white mt-0.5">Diretrizes de Governança & Pontos para Validação na Reunião</h2>
+        <p class="text-slate-400 text-xs sm:text-sm mt-0.5">Regras para garantir integridade estatística e itens abertos para alinhamento com as Secretarias.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 overflow-y-auto max-h-[62vh] pr-1">
+        
+        <!-- Coluna 1: As 4 Regras de Ouro -->
+        <div class="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <h3 class="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2 mb-3 pb-2 border-b border-slate-800">
+              <span>🛡️</span> As 4 Regras de Ouro para Uso das TAGS
+            </h3>
+            
+            <ul class="space-y-3 text-xs text-slate-300">
+              <li class="flex items-start gap-2.5">
+                <span class="p-1 rounded bg-amber-950 text-amber-300 font-bold text-[10px] mt-0.5">1</span>
+                <div>
+                  <strong class="text-white block font-semibold">O que NÃO vira Tag (Campos Nativos Fala.BR)</strong>
+                  <span class="text-slate-400 text-[11px]">Não criar tags para <em>Denúncia, Reclamação, Solicitação, Elogio, Sugestão</em>. O Fala.BR já possui campo próprio para o tipo de manifestação.</span>
+                </div>
+              </li>
+
+              <li class="flex items-start gap-2.5">
+                <span class="p-1 rounded bg-amber-950 text-amber-300 font-bold text-[10px] mt-0.5">2</span>
+                <div>
+                  <strong class="text-white block font-semibold">Padronização Canônica de Entidades</strong>
+                  <span class="text-slate-400 text-[11px]">Cada entidade esportiva deve ter <strong>um único nome oficial</strong> (ex: apenas <code>Confederação Brasileira de Futebol - CBF</code>, evitando variações como CBF solto).</span>
+                </div>
+              </li>
+
+              <li class="flex items-start gap-2.5">
+                <span class="p-1 rounded bg-amber-950 text-amber-300 font-bold text-[10px] mt-0.5">3</span>
+                <div>
+                  <strong class="text-white block font-semibold">"Suposição" vs. "Fato Comprovado"</strong>
+                  <span class="text-slate-400 text-[11px]">Usar <code class="text-amber-300">Suposta Irregularidade</code> quando o manifestante suspeita ou alega um fato, e reservar <code class="text-rose-300">Irregularidade</code> para situações apuradas e caracterizadas.</span>
+                </div>
+              </li>
+
+              <li class="flex items-start gap-2.5">
+                <span class="p-1 rounded bg-amber-950 text-amber-300 font-bold text-[10px] mt-0.5">4</span>
+                <div>
+                  <strong class="text-white block font-semibold">Separação entre Tags Temáticas e Operacionais</strong>
+                  <span class="text-slate-400 text-[11px]">Tags como <em>AGUARDANDO ORIENTAÇÃO</em> ou <em>Duplicidade</em> representam o fluxo interno de atendimento e não o conteúdo do tema.</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-amber-300/90 italic">
+            Garantia: Relatórios limpos, sem redundâncias e auditáveis pela CGU.
+          </div>
+        </div>
+
+        <!-- Coluna 2: Pontos Abertos para Validação na Reunião -->
+        <div class="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <h3 class="text-xs font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-2 mb-3 pb-2 border-b border-slate-800">
+              <span>📋</span> Pontos para Validação com os Gestores
+            </h3>
+
+            <p class="text-[11px] text-slate-400 mb-2">Esta é uma proposta de estrutura para deliberação colegiada com as áreas técnicas:</p>
+
+            <ul class="space-y-2 text-xs text-slate-300">
+              <li class="flex items-start gap-2">
+                <span class="text-cyan-400 font-bold">•</span>
+                <span>Validação do de-para de Subassuntos para cadastro no módulo Fala.BR.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-cyan-400 font-bold">•</span>
+                <span>Definição de quais Secretarias/Unidades devem constar como Tags vs. apenas encaminhamento interno.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-cyan-400 font-bold">•</span>
+                <span>Fechamento do catálogo oficial de entidades esportivas (nomes canônicos).</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-cyan-400 font-bold">•</span>
+                <span>Aprovação do critério formal de diferenciação entre <em>Suposta Irregularidade</em> e <em>Irregularidade</em>.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-cyan-400 font-bold">•</span>
+                <span>Eliminação definitiva de tags históricas sem uso estatístico (ex: testes, erros de digitação).</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-cyan-300 flex items-center gap-1.5 font-medium">
+            <span>🤝 Postura da Reunião: "Construção conjunta com foco na eficiência do Ministério".</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 8: GANHOS DE USABILIDADE & BENEFÍCIOS                   -->
+    <!-- ============================================================== -->
+    <section class="slide flex-col justify-start w-full min-h-[75vh]" data-title="Ganhos e Benefícios">
+      <div class="border-b border-slate-800 pb-3 mb-4">
+        <span class="text-xs font-bold text-gogreen-500 tracking-wider uppercase">Valor Público Gerado</span>
+        <h2 class="text-3xl font-extrabold text-white mt-0.5">Impacto Estratégico da Nova Árvore</h2>
+        <p class="text-slate-400 text-sm mt-0.5">Benefícios diretos para a equipe da Ouvidoria, a alta gestão do MESP e o cidadão.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 flex-1 items-stretch">
+        
+        <div class="bg-gradient-to-b from-slate-900 to-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold text-xl mb-4">
+              ⏱️
+            </div>
+            <h3 class="text-base font-bold text-white">Para a Equipe de Ouvidoria</h3>
+            <ul class="mt-3 space-y-2.5 text-xs text-slate-300">
+              <li class="flex items-start gap-2">
+                <span class="text-blue-400 font-bold">•</span>
+                <span><strong>Redução do tempo de triagem:</strong> Menos cliques e menor esforço cognitivo na escolha da tipologia.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-blue-400 font-bold">•</span>
+                <span><strong>Fim das reclassificações:</strong> Classificação consistente desde a entrada da manifestação.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-blue-400 font-bold">•</span>
+                <span><strong>Padronização operacional:</strong> Mesma linguagem entre todos os ouvidores e atendentes.</span>
+              </li>
+            </ul>
+          </div>
+          <div class="pt-3 border-t border-slate-800 text-[11px] text-blue-300 font-medium">
+            &darr; 40% estimado em retrabalho operacional
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-b from-slate-900 to-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center font-bold text-xl mb-4">
+              📊
+            </div>
+            <h3 class="text-base font-bold text-white">Para a Gestão & Secretarias</h3>
+            <ul class="mt-3 space-y-2.5 text-xs text-slate-300">
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 font-bold">•</span>
+                <span><strong>Relatórios analíticos precisos:</strong> Extração direta de dados por secretaria (SNAEDE, SNPAR, SNE).</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 font-bold">•</span>
+                <span><strong>Rastreio antecipado de crises:</strong> Detecção de picos de denúncias antes que virem escândalos públicos.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 font-bold">•</span>
+                <span><strong>Cumprimento de metas CGU:</strong> Respostas qualificadas aos órgãos de controle com dados auditáveis.</span>
+              </li>
+            </ul>
+          </div>
+          <div class="pt-3 border-t border-slate-800 text-[11px] text-emerald-300 font-medium">
+            Inteligência orientada a evidências
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-b from-slate-900 to-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-amber-600/20 text-amber-400 flex items-center justify-center font-bold text-xl mb-4">
+              🤝
+            </div>
+            <h3 class="text-base font-bold text-white">Para o Cidadão & Sociedade</h3>
+            <ul class="mt-3 space-y-2.5 text-xs text-slate-300">
+              <li class="flex items-start gap-2">
+                <span class="text-amber-400 font-bold">•</span>
+                <span><strong>Canais compreensíveis:</strong> Nomes claros que refletem a realidade dos serviços do Esporte.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-amber-400 font-bold">•</span>
+                <span><strong>Respostas mais rápidas:</strong> Menor tempo de tramitação interna entre áreas do ministério.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-amber-400 font-bold">•</span>
+                <span><strong>Confiança na apuração:</strong> Certeza de que denúncias chegam aos setores corretos com sigilo.</span>
+              </li>
+            </ul>
+          </div>
+          <div class="pt-3 border-t border-slate-800 text-[11px] text-amber-300 font-medium">
+            Transparência ativa e controle social
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 9: PLANO DE IMPLANTAÇÃO E PRÓXIMOS PASSOS                -->
+    <!-- ============================================================== -->
+    <section class="slide flex-col justify-start w-full min-h-[75vh]" data-title="Plano de Implantação">
+      <div class="border-b border-slate-800 pb-3 mb-4">
+        <span class="text-xs font-bold text-govblue-400 tracking-wider uppercase">Cronograma & Transição</span>
+        <h2 class="text-3xl font-extrabold text-white mt-0.5">Plano de Implantação no Fala.BR</h2>
+        <p class="text-slate-400 text-sm mt-0.5">Etapas necessárias para formalizar e colocar a nova árvore em produção de forma segura.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-bold text-blue-400 font-mono mb-2">ETAPA 01</div>
+            <h3 class="text-sm font-bold text-white">Validação & Aprovação</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">Apresentação à chefia da Ouvidoria e validação do de-para de assuntos junto às áreas técnicas interessadas.</p>
+          </div>
+          <div class="mt-4 pt-2 border-t border-slate-800 text-[10px] text-slate-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-blue-500"></span> Reunião atual de alinhamento
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-bold text-emerald-400 font-mono mb-2">ETAPA 02</div>
+            <h3 class="text-sm font-bold text-white">Parametrização Fala.BR</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">Solicitação à CGU ou parametrização no módulo de administração do Fala.BR com cadastro da árvore e catálogo de tags.</p>
+          </div>
+          <div class="mt-4 pt-2 border-t border-slate-800 text-[10px] text-slate-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Configuração em ambiente seguro
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-bold text-amber-400 font-mono mb-2">ETAPA 03</div>
+            <h3 class="text-sm font-bold text-white">Treinamento da Equipe</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">Oficina rápida com a equipe da Ouvidoria e elaboração de um Guia Rápido de Triagem e Tagging com os exemplos práticos.</p>
+          </div>
+          <div class="mt-4 pt-2 border-t border-slate-800 text-[10px] text-slate-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span> Alinhamento de boas práticas
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-bold text-purple-400 font-mono mb-2">ETAPA 04</div>
+            <h3 class="text-sm font-bold text-white">Go-Live & Monitoramento</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">Entrada em produção, acompanhamento das primeiras semanas de triagem e geração dos primeiros relatórios analíticos de denúncias.</p>
+          </div>
+          <div class="mt-4 pt-2 border-t border-slate-800 text-[10px] text-slate-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-purple-500"></span> Avaliação contínua de melhoria
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mt-6 bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">📋</span>
+          <div>
+            <h4 class="text-xs font-bold text-white">Entrega Imediata desta Proposta</h4>
+            <p class="text-[11px] text-slate-400">Esta aplicação web pode ser aberta em qualquer navegador ou projetada diretamente durante a reunião de apresentação.</p>
+          </div>
+        </div>
+        <button onclick="goToSlide(4)" class="px-3 py-1.5 rounded-lg bg-govblue-600 hover:bg-govblue-500 text-white text-xs font-medium transition flex items-center gap-1.5">
+          <span>Abrir Simulador</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SLIDE 10: CONCLUSÃO & ABERTURA PARA PERGUNTAS                  -->
+    <!-- ============================================================== -->
+    <section class="slide flex-col justify-center items-center text-center w-full min-h-[75vh]" data-title="Conclusão">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gogreen-500/20 border border-gogreen-500/40 text-emerald-300 text-xs font-semibold mb-6">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        Ouvidoria mais Eficiente, Dados mais Transparentes
+      </div>
+
+      <h2 class="text-4xl md:text-5xl font-black text-white max-w-3xl leading-tight">
+        Preparados para Transformar os Dados da Ouvidoria em <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-emerald-400 to-amber-300">Inteligência Estratégica</span>?
+      </h2>
+
+      <p class="text-slate-300 text-base max-w-2xl mt-4 leading-relaxed">
+        Com a nova árvore no Fala.BR, o Ministério do Esporte ganha precisão analítica em denúncias, velocidade de resposta ao cidadão e liderança em governança pública.
+      </p>
+
+      <div class="mt-8 flex flex-wrap gap-4 justify-center">
+        <button onclick="goToSlide(4)" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-govblue-600 to-govblue-500 text-white font-semibold text-sm shadow-lg hover:shadow-govblue-500/30 transition flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+          <span>Retornar ao Simulador Interativo</span>
+        </button>
+
+        <button onclick="goToSlide(3)" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-700 transition flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+          <span>Rever o Funil de Filtragem</span>
+        </button>
+      </div>
+
+      <div class="mt-12 text-slate-500 text-xs flex flex-col items-center gap-1">
+        <span class="font-semibold text-slate-400">Ouvidoria-Geral • Ministério do Esporte</span>
+        <span>Apresentação Técnica Fala.BR</span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation & Controls Bar -->
+  <footer class="no-print bg-slate-900/90 backdrop-blur border-t border-slate-800 px-6 py-3 z-30 sticky bottom-0 flex items-center justify-between">
+    
+    <!-- Left Navigation buttons -->
+    <div class="flex items-center space-x-2">
+      <button onclick="prevSlide()" id="prevBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-xs font-medium flex items-center gap-1 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        <span>Anterior</span>
+      </button>
+
+      <button onclick="nextSlide()" id="nextBtn" class="px-4 py-1.5 rounded-lg bg-govblue-600 hover:bg-govblue-500 text-white transition text-xs font-semibold flex items-center gap-1 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
+        <span>Próximo</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- Center Progress bar & Slide Title -->
+    <div class="hidden sm:flex flex-col items-center max-w-md w-full px-4">
+      <span id="currentSlideTitle" class="text-xs font-medium text-slate-300 truncate mb-1">Capa</span>
+      <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+        <div id="slideProgressBar" class="bg-gradient-to-r from-govblue-500 to-emerald-400 h-1.5 rounded-full transition-all duration-300" style="width: 10%;"></div>
+      </div>
+    </div>
+
+    <!-- Right Help / Shortcuts info -->
+    <div class="text-[11px] text-slate-400 hidden md:flex items-center gap-2">
+      <span>Navegue com <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-300">←</kbd> <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-300">→</kbd></span>
+    </div>
+  </footer>
+
+  <!-- Slide Overview Drawer Modal -->
+  <div id="overviewModal" class="no-print fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <span>📑</span>
+          <span>Índice de Slides</span>
+        </h3>
+        <button onclick="toggleOverview()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-3" id="overviewSlidesGrid">
+        <!-- Populated via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- JAVASCRIPT: DATA & INTERACTIVITY                               -->
+  <!-- ============================================================== -->
+  <script>
+    // -------------------------------------------------------------
+    // Data Model: Árvore de Classificação do Usuário
+    // -------------------------------------------------------------
+    const classificationTree = [
+      {
+        id: 'assedio_moral',
+        nome: 'Assédio moral',
+        categoria: 'sensivel',
+        subassuntos: [
+          'Relação entre agentes públicos'
+        ]
+      },
+      {
+        id: 'assedio_sexual',
+        nome: 'Assédio sexual',
+        categoria: 'sensivel',
+        subassuntos: [
+          'Relação entre agentes públicos'
+        ]
+      },
+      {
+        id: 'atendimento_publico',
+        nome: 'Atendimento ao público',
+        categoria: 'cidadao',
+        subassuntos: [
+          'Disque Esporte',
+          'Ouvidoria'
+        ]
+      },
+      {
+        id: 'canais_atendimento',
+        nome: 'Canais de atendimento',
+        categoria: 'canais',
+        subassuntos: [
+          'Disque Esporte',
+          'Ouvidoria',
+          'Fala.BR'
+        ]
+      },
+      {
+        id: 'esporte',
+        nome: 'Esporte',
+        categoria: 'finalistico',
+        subassuntos: [
+          'Bolsa Atleta',
+          'Bolsa Pódio',
+          'Atletas',
+          'Modalidades Esportivas',
+          'Entidades Desportivas',
+          'Competições e Eventos Esportivos',
+          'Olimpíadas e Ciclo Olímpico',
+          'Paralimpíadas e Ciclo Paralímpico',
+          'Futebol Feminino',
+          'Paradesporto',
+          'Esporte Seguro',
+          'Esporte Comunitário',
+          'Lei de Incentivo ao Esporte',
+          'Projetos Esportivos',
+          'Editais e Chamamentos',
+          'Infraestrutura Esportiva',
+          'Rede de Desenvolvimento do Esporte *'
+        ]
+      },
+      {
+        id: 'ti_sistemas',
+        nome: 'Tecnologia da Informação e Sistemas',
+        categoria: 'ti',
+        subassuntos: [
+          'Sistema Bolsa Atleta',
+          'Sistema da Lei de Incentivo ao Esporte (SLIE)',
+          'Protocolo Digital',
+          'Portal do Ministério do Esporte'
+        ]
+      },
+      {
+        id: 'premios_apostas',
+        nome: 'Prêmios e Apostas',
+        categoria: 'estrategico',
+        subassuntos: [
+          'Regulamentação e Fiscalização'
+        ]
+      },
+      {
+        id: 'corrupcao',
+        nome: 'Corrupção',
+        categoria: 'denuncia',
+        subassuntos: [
+          'Contratos e Contratações Públicas',
+          'Parcerias, Convênios e Repasses',
+          'Gestão de Recursos Públicos',
+          'Conduta e Benefícios Indevidos'
+        ]
+      }
+    ];
+
+    // Tags Consolidadas Oficiais Organizadas pelas 12 Categorias
+    const tagCategories = [
+      { id: 'todas', label: 'Todas as Tags' },
+      { id: 'problemas', label: 'Problemas / Irregularidades' },
+      { id: 'natureza', label: 'Natureza da Demanda' },
+      { id: 'unidades', label: 'Institucionais / Unidades MESP' },
+      { id: 'modalidades', label: 'Modalidades Esportivas' },
+      { id: 'entidades_esp', label: 'Entidades Esportivas' },
+      { id: 'especificas', label: 'Entidades Específicas' },
+      { id: 'pessoas', label: 'Pessoas / Público' },
+      { id: 'infra', label: 'Infraestrutura / Equipamentos' },
+      { id: 'inclusao', label: 'Inclusão / Políticas' },
+      { id: 'comunicacao', label: 'Comunicação / Atendimento' },
+      { id: 'documentos', label: 'Documentos / Admin' },
+      { id: 'fluxo', label: 'Tratamento / Fluxo Interno' }
+    ];
+
+    const globalTags = [
+      // 1. Entidades esportivas
+      { nome: 'Confederação', tipo: 'entidades_esp' },
+      { nome: 'Federação', tipo: 'entidades_esp' },
+      { nome: 'Associação', tipo: 'entidades_esp' },
+      { nome: 'Clube', tipo: 'entidades_esp' },
+      { nome: 'Liga', tipo: 'entidades_esp' },
+      { nome: 'Organização Esportiva', tipo: 'entidades_esp' },
+      { nome: 'Entidades Desportivas', tipo: 'entidades_esp' },
+
+      // 2. Entidades específicas
+      { nome: 'Confederação Brasileira de Atletismo (CBAt)', tipo: 'especificas' },
+      { nome: 'Confederação Brasileira de Beach Tennis', tipo: 'especificas' },
+      { nome: 'Confederação Brasileira de Futebol (CBF)', tipo: 'especificas' },
+      { nome: 'Confederação Brasileira de Jiu-Jitsu', tipo: 'especificas' },
+      { nome: 'Confederação Brasileira de Skateboarding', tipo: 'especificas' },
+      { nome: 'Confederação Brasileira de Tênis de Mesa (CBTM)', tipo: 'especificas' },
+
+      // 3. Modalidades esportivas
+      { nome: 'Futebol', tipo: 'modalidades' },
+      { nome: 'Hipismo', tipo: 'modalidades' },
+      { nome: 'Atletismo', tipo: 'modalidades' },
+      { nome: 'Basquete', tipo: 'modalidades' },
+      { nome: 'Boxe', tipo: 'modalidades' },
+      { nome: 'Canoagem', tipo: 'modalidades' },
+      { nome: 'Ciclismo', tipo: 'modalidades' },
+      { nome: 'Esgrima', tipo: 'modalidades' },
+      { nome: 'Esports', tipo: 'modalidades' },
+      { nome: 'Futebol de Mesa', tipo: 'modalidades' },
+      { nome: 'Ginástica artística', tipo: 'modalidades' },
+      { nome: 'Hóquei Sobre Grama', tipo: 'modalidades' },
+      { nome: 'Judô', tipo: 'modalidades' },
+      { nome: 'Levantamento de peso', tipo: 'modalidades' },
+      { nome: 'Natação', tipo: 'modalidades' },
+      { nome: 'Skate', tipo: 'modalidades' },
+      { nome: 'Surfe', tipo: 'modalidades' },
+      { nome: 'Taekwondo', tipo: 'modalidades' },
+      { nome: 'Tênis', tipo: 'modalidades' },
+      { nome: 'Tênis de Mesa', tipo: 'modalidades' },
+      { nome: 'Tiro Esportivo', tipo: 'modalidades' },
+      { nome: 'Vela', tipo: 'modalidades' },
+      { nome: 'Vôlei', tipo: 'modalidades' },
+
+      // 4. Pessoas / público
+      { nome: 'Atletas', tipo: 'pessoas' },
+      { nome: 'Servidor', tipo: 'pessoas' },
+      { nome: 'Torcedor', tipo: 'pessoas' },
+      { nome: 'Proponente', tipo: 'pessoas' },
+
+      // 5. Natureza da demanda
+      { nome: 'Acesso', tipo: 'natureza' },
+      { nome: 'Informação', tipo: 'natureza' },
+      { nome: 'Orientação', tipo: 'natureza' },
+      { nome: 'Inscrição', tipo: 'natureza' },
+      { nome: 'Cadastro', tipo: 'natureza' },
+      { nome: 'Documentação', tipo: 'natureza' },
+      { nome: 'Pré-requisitos', tipo: 'natureza' },
+      { nome: 'Resultado', tipo: 'natureza' },
+      { nome: 'Recurso', tipo: 'natureza' },
+      { nome: 'Revisão', tipo: 'natureza' },
+      { nome: 'Renovação', tipo: 'natureza' },
+      { nome: 'Registro', tipo: 'natureza' },
+      { nome: 'Certificação', tipo: 'natureza' },
+      { nome: 'Certificado', tipo: 'natureza' },
+      { nome: 'Legislação', tipo: 'natureza' },
+      { nome: 'Edital', tipo: 'natureza' },
+      { nome: 'Chamamento', tipo: 'natureza' },
+      { nome: 'Prazo', tipo: 'natureza' },
+      { nome: 'Fiscalização', tipo: 'natureza' },
+      { nome: 'Prestação de contas', tipo: 'natureza' },
+      { nome: 'Repasse', tipo: 'natureza' },
+      { nome: 'Pagamento', tipo: 'natureza' },
+      { nome: 'Patrocínio', tipo: 'natureza' },
+      { nome: 'Captação', tipo: 'natureza' },
+      { nome: 'Execução', tipo: 'natureza' },
+      { nome: 'Contratação', tipo: 'natureza' },
+      { nome: 'Proposta', tipo: 'natureza' },
+      { nome: 'Projeto', tipo: 'natureza' },
+      { nome: 'Prorrogação', tipo: 'natureza' },
+      { nome: 'Transferência', tipo: 'natureza' },
+      { nome: 'Transporte', tipo: 'natureza' },
+      { nome: 'Dados Bancários', tipo: 'natureza' },
+      { nome: 'Termo de Fomento', tipo: 'natureza' },
+      { nome: 'Termo de Adesão', tipo: 'natureza' },
+      { nome: 'Termo de Responsabilidade', tipo: 'natureza' },
+      { nome: 'Protocolo', tipo: 'natureza' },
+      { nome: 'Manuais', tipo: 'natureza' },
+
+      // 6. Problemas / irregularidades
+      { nome: 'Atraso', tipo: 'problemas' },
+      { nome: 'Inconsistência', tipo: 'problemas' },
+      { nome: 'Erro', tipo: 'problemas' },
+      { nome: 'Falha', tipo: 'problemas' },
+      { nome: 'Irregularidade', tipo: 'problemas' },
+      { nome: 'Suposta Irregularidade', tipo: 'problemas' },
+      { nome: 'Suposta Conduta Inadequada', tipo: 'problemas' },
+      { nome: 'Recebimento Indevido', tipo: 'problemas' },
+      { nome: 'Não pagamento', tipo: 'problemas' },
+      { nome: 'Negativa', tipo: 'problemas' },
+      { nome: 'Descumprimento', tipo: 'problemas' },
+      { nome: 'Discriminação', tipo: 'problemas' },
+      { nome: 'Violência', tipo: 'problemas' },
+      { nome: 'Abuso', tipo: 'problemas' },
+      { nome: 'Ofensas', tipo: 'problemas' },
+      { nome: 'Assédio Moral', tipo: 'problemas' },
+      { nome: 'Assédio Sexual', tipo: 'problemas' },
+      { nome: 'Suposta Manipulação de Resultados', tipo: 'problemas' },
+      { nome: 'Suposto Nepotismo', tipo: 'problemas' },
+      { nome: 'Desinformação/Fake News', tipo: 'problemas' },
+      { nome: 'Golpes e Fraudes Online', tipo: 'problemas' },
+      { nome: 'Falta de clareza', tipo: 'problemas' },
+
+      // 7. Infraestrutura / equipamentos
+      { nome: 'Infraestrutura', tipo: 'infra' },
+      { nome: 'Equipamentos', tipo: 'infra' },
+      { nome: 'Ginásio', tipo: 'infra' },
+      { nome: 'Quadra Esportiva', tipo: 'infra' },
+      { nome: 'Centro Olímpico', tipo: 'infra' },
+      { nome: 'Obra', tipo: 'infra' },
+      { nome: 'Reforma', tipo: 'infra' },
+      { nome: 'Manutenção', tipo: 'infra' },
+      { nome: 'Construção', tipo: 'infra' },
+      { nome: 'Acessibilidade', tipo: 'infra' },
+      { nome: 'Inauguração', tipo: 'infra' },
+      { nome: 'Doação de Material Esportivo', tipo: 'infra' },
+      { nome: 'Materiais', tipo: 'infra' },
+
+      // 8. Inclusão / políticas
+      { nome: 'Inclusão', tipo: 'inclusao' },
+      { nome: 'Paradesporto', tipo: 'inclusao' },
+      { nome: 'Modalidades', tipo: 'inclusao' },
+      { nome: 'Categoria', tipo: 'inclusao' },
+      { nome: 'Academia', tipo: 'inclusao' },
+
+      // 9. Comunicação / atendimento
+      { nome: 'Disque Esporte', tipo: 'comunicacao' },
+      { nome: 'Ouvidoria - MESP', tipo: 'comunicacao' },
+      { nome: 'Contatos - MESP', tipo: 'comunicacao' },
+      { nome: 'Fala.BR', tipo: 'comunicacao' },
+      { nome: 'Redes Sociais', tipo: 'comunicacao' },
+      { nome: 'Teams', tipo: 'comunicacao' },
+      { nome: 'OFÍCIO', tipo: 'comunicacao' },
+      { nome: 'Audiência - MESP', tipo: 'comunicacao' },
+      { nome: 'Agenda', tipo: 'comunicacao' },
+      { nome: 'Apresentação', tipo: 'comunicacao' },
+
+      // 10. Documentos / informações administrativas
+      { nome: 'Declaração', tipo: 'documentos' },
+      { nome: 'Listagem', tipo: 'documentos' },
+      { nome: 'Estatuto', tipo: 'documentos' },
+      { nome: 'Regimento', tipo: 'documentos' },
+      { nome: 'Informe de Rendimentos', tipo: 'documentos' },
+      { nome: 'Extensão de Arquivos', tipo: 'documentos' },
+      { nome: 'Certificado', tipo: 'documentos' },
+      { nome: 'Documentação', tipo: 'documentos' },
+
+      // 11. Tratamento / fluxo interno
+      { nome: 'AGUARDANDO ORIENTAÇÃO', tipo: 'fluxo' },
+      { nome: 'Aguardar resposta SNAEDE', tipo: 'fluxo' },
+      { nome: 'Análise Técnica', tipo: 'fluxo' },
+      { nome: 'Para Validação', tipo: 'fluxo' },
+      { nome: 'Manifestação Anterior', tipo: 'fluxo' },
+      { nome: 'Duplicidade', tipo: 'fluxo' },
+      { nome: 'Fora de competência', tipo: 'fluxo' },
+      { nome: 'Alheio ao MESP', tipo: 'fluxo' },
+
+      // 12. Institucionais / unidades
+      { nome: 'ABCD - Controle de Dopagem', tipo: 'unidades' },
+      { nome: 'APSD - Participação Social e Diversidade', tipo: 'unidades' },
+      { nome: 'CE - Comissão de Ética', tipo: 'unidades' },
+      { nome: 'CGGA - Gestão e Administração', tipo: 'unidades' },
+      { nome: 'Coger - Corregedoria', tipo: 'unidades' },
+      { nome: 'CONJUR – Consultoria Jurídica', tipo: 'unidades' },
+      { nome: 'DCERT - Certificação', tipo: 'unidades' },
+      { nome: 'DCLP', tipo: 'unidades' },
+      { nome: 'DIE - Infraestrutura do Esporte', tipo: 'unidades' },
+      { nome: 'DLCP', tipo: 'unidades' },
+      { nome: 'DPPIE - Incentivo ao Esporte', tipo: 'unidades' },
+      { nome: 'SE - Secretaria Executiva', tipo: 'unidades' },
+      { nome: 'SNAEDE - Apostas Esportivas', tipo: 'unidades' },
+      { nome: 'SNE - Excelência Esportiva', tipo: 'unidades' },
+      { nome: 'SNEAD', tipo: 'unidades' },
+      { nome: 'SNEAELIS - Esporte Amador/Inclusão', tipo: 'unidades' },
+      { nome: 'SNFDT - Futebol e Direitos do Torcedor', tipo: 'unidades' },
+      { nome: 'SNPAR - Paradesporto', tipo: 'unidades' }
+    ];
+
+    // -------------------------------------------------------------
+    // Slide Navigation Controller
+    // -------------------------------------------------------------
+    const slides = document.querySelectorAll('.slide');
+    let currentSlideIndex = 0;
+
+    function showSlide(index) {
+      if (index < 0 || index >= slides.length) return;
+      
+      slides.forEach((slide, i) => {
+        if (i === index) {
+          slide.classList.add('active');
+        } else {
+          slide.classList.remove('active');
+        }
+      });
+
+      currentSlideIndex = index;
+      updateControls();
+    }
+
+    function nextSlide() {
+      if (currentSlideIndex < slides.length - 1) {
+        showSlide(currentSlideIndex + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlideIndex > 0) {
+        showSlide(currentSlideIndex - 1);
+      }
+    }
+
+    function goToSlide(index) {
+      showSlide(index);
+      closeOverview();
+    }
+
+    function updateControls() {
+      document.getElementById('currentSlideIndicator').innerText = currentSlideIndex + 1;
+      document.getElementById('totalSlidesIndicator').innerText = slides.length;
+      
+      const currentTitle = slides[currentSlideIndex].getAttribute('data-title') || `Slide ${currentSlideIndex + 1}`;
+      document.getElementById('currentSlideTitle').innerText = `${currentSlideIndex + 1}. ${currentTitle}`;
+      
+      const progressPercent = ((currentSlideIndex + 1) / slides.length) * 100;
+      document.getElementById('slideProgressBar').style.width = `${progressPercent}%`;
+
+      document.getElementById('prevBtn').disabled = currentSlideIndex === 0;
+      document.getElementById('nextBtn').disabled = currentSlideIndex === slides.length - 1;
+    }
+
+    // Keyboard Navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        showSlide(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        showSlide(slides.length - 1);
+      } else if (e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        toggleFullScreen();
+      } else if (e.key.toLowerCase() === 'escape') {
+        closeOverview();
+        closeOldTreeModal();
+      }
+    });
+
+    // Old Tree Modal Toggle
+    function toggleOldTreeModal() {
+      const modal = document.getElementById('oldTreeModal');
+      if (modal) modal.classList.toggle('hidden');
+    }
+
+    function closeOldTreeModal() {
+      const modal = document.getElementById('oldTreeModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    // Fullscreen Toggle
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Slide Overview Modal
+    function toggleOverview() {
+      const modal = document.getElementById('overviewModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        renderOverviewGrid();
+      }
+    }
+
+    function closeOverview() {
+      document.getElementById('overviewModal').classList.add('hidden');
+    }
+
+    function renderOverviewGrid() {
+      const grid = document.getElementById('overviewSlidesGrid');
+      grid.innerHTML = '';
+      slides.forEach((slide, idx) => {
+        const title = slide.getAttribute('data-title') || `Slide ${idx + 1}`;
+        const isCurrent = idx === currentSlideIndex;
+        const btn = document.createElement('button');
+        btn.onclick = () => goToSlide(idx);
+        btn.className = `text-left p-3 rounded-xl border transition flex items-center justify-between ${
+          isCurrent 
+            ? 'bg-govblue-600/40 border-govblue-500 text-white font-bold' 
+            : 'bg-slate-800/80 border-slate-700/80 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
+        }`;
+        btn.innerHTML = `
+          <div class="flex items-center gap-2.5 truncate">
+            <span class="w-6 h-6 rounded-lg ${isCurrent ? 'bg-govblue-500 text-white' : 'bg-slate-700 text-slate-300'} flex items-center justify-center text-xs font-mono">${idx + 1}</span>
+            <span class="text-xs truncate">${title}</span>
+          </div>
+          ${isCurrent ? '<span class="text-[10px] text-blue-300 uppercase font-mono">Atual</span>' : ''}
+        `;
+        grid.appendChild(btn);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // Mapeamento de Tags Recomendadas por Assunto e Subassunto
+    // -------------------------------------------------------------
+    const recommendedTagsMap = {
+      // Esporte
+      'esporte_Bolsa Atleta': ['Atletas', 'Pagamento', 'Atraso', 'Não pagamento', 'SNE - Excelência Esportiva'],
+      'esporte_Bolsa Pódio': ['Atletas', 'Pagamento', 'Atraso', 'SNE - Excelência Esportiva'],
+      'esporte_Atletas': ['Atletas', 'Cadastro', 'Inscrição', 'Orientação'],
+      'esporte_Modalidades Esportivas': ['Futebol', 'Atletismo', 'Natação', 'Judô', 'Basquete', 'Vôlei'],
+      'esporte_Entidades Desportivas': ['Confederação', 'Federação', 'Clube', 'Confederação Brasileira de Futebol (CBF)', 'Suposta Irregularidade'],
+      'esporte_Competições e Eventos Esportivos': ['Organização Esportiva', 'Fiscalização', 'Suposta Manipulação de Resultados'],
+      'esporte_Olimpíadas e Ciclo Olímpico': ['Atletas', 'SNE - Excelência Esportiva'],
+      'esporte_Paralimpíadas e Ciclo Paralímpico': ['Atletas', 'Paradesporto', 'SNPAR - Paradesporto'],
+      'esporte_Futebol Feminino': ['Futebol', 'Confederação Brasileira de Futebol (CBF)', 'Atletas', 'SNFDT - Futebol e Direitos do Torcedor'],
+      'esporte_Paradesporto': ['Inclusão', 'Paradesporto', 'Acessibilidade', 'SNPAR - Paradesporto'],
+      'esporte_Esporte Seguro': ['Assédio Sexual', 'Assédio Moral', 'Atletas', 'Clube', 'Suposta Conduta Inadequada'],
+      'esporte_Esporte Comunitário': ['Inclusão', 'Quadra Esportiva', 'Materiais', 'SNEAELIS - Esporte Amador/Inclusão'],
+      'esporte_Lei de Incentivo ao Esporte': ['Projeto', 'Proponente', 'Proposta', 'Documentação', 'Orientação', 'Captação', 'DPPIE - Incentivo ao Esporte'],
+      'esporte_Projetos Esportivos': ['Projeto', 'Proponente', 'Prestação de contas', 'Termo de Fomento'],
+      'esporte_Editais e Chamamentos': ['Edital', 'Chamamento', 'Prazo', 'Inscrição', 'Resultado', 'Recurso'],
+      'esporte_Infraestrutura Esportiva': ['Centro Olímpico', 'Ginásio', 'Quadra Esportiva', 'Reforma', 'Acessibilidade', 'Manutenção', 'DIE - Infraestrutura do Esporte'],
+      'esporte_Rede de Desenvolvimento do Esporte': ['Inclusão', 'Orientação', 'Capacitação'],
+
+      // Corrupção
+      'corrupcao_Contratos e Contratações Públicas': ['Contratação', 'Fiscalização', 'Suposta Irregularidade', 'Pagamento', 'Coger - Corregedoria'],
+      'corrupcao_Parcerias e Repasses': ['Repasse', 'Prestação de contas', 'Proponente', 'Suposta Irregularidade', 'Termo de Fomento', 'Coger - Corregedoria'],
+      'corrupcao_Parcerias, Convênios e Repasses': ['Repasse', 'Prestação de contas', 'Proponente', 'Suposta Irregularidade', 'Termo de Fomento', 'Coger - Corregedoria'],
+      'corrupcao_Gestão de Recursos Públicos': ['Prestação de contas', 'Recebimento Indevido', 'Suposta Irregularidade', 'Coger - Corregedoria'],
+      'corrupcao_Conduta e Benefícios Indevidos': ['Suposto Nepotismo', 'Servidor', 'Suposta Conduta Inadequada', 'CE - Comissão de Ética', 'Coger - Corregedoria'],
+
+      // Assédio
+      'assedio_moral_Relação entre agentes públicos': ['Servidor', 'Assédio Moral', 'Suposta Conduta Inadequada', 'CE - Comissão de Ética', 'Coger - Corregedoria'],
+      'assedio_sexual_Relação entre agentes públicos': ['Servidor', 'Assédio Sexual', 'Suposta Conduta Inadequada', 'CE - Comissão de Ética', 'Coger - Corregedoria'],
+
+      // TI e Sistemas
+      'ti_sistemas_Sistema Bolsa Atleta': ['Erro', 'Falha', 'Documentação', 'Acesso', 'Inconsistência'],
+      'ti_sistemas_Sistema da Lei de Incentivo ao Esporte (SLIE)': ['Erro', 'Falha', 'Acesso', 'Cadastro', 'Projeto'],
+      'ti_sistemas_Protocolo Digital': ['Acesso', 'Erro', 'Documentação', 'Protocolo'],
+      'ti_sistemas_Portal do Ministério do Esporte': ['Acesso', 'Informação', 'Falta de clareza'],
+
+      // Prêmios e Apostas
+      'premios_apostas_Regulamentação e Fiscalização': ['Apostas Esportivas', 'Fiscalização', 'Suposta Irregularidade', 'Suposta Manipulação de Resultados', 'SNAEDE - Apostas Esportivas'],
+
+      // Atendimento e Canais
+      'atendimento_publico_Disque Esporte': ['Disque Esporte', 'Acesso', 'Orientação', 'Falta de clareza'],
+      'atendimento_publico_Ouvidoria': ['Ouvidoria - MESP', 'Acesso', 'Orientação', 'Falta de clareza'],
+      'canais_atendimento_Disque Esporte': ['Disque Esporte', 'Acesso', 'Falha'],
+      'canais_atendimento_Ouvidoria': ['Ouvidoria - MESP', 'Acesso', 'Orientação'],
+      'canais_atendimento_Fala.BR': ['Fala.BR', 'Orientação', 'Acesso']
+    };
+
+    // -------------------------------------------------------------
+    // Os 12 Casos Práticos de Demonstração Rápida
+    // -------------------------------------------------------------
+    const practicalCasePresets = [
+      {
+        id: 1,
+        titulo: '1. Atraso Bolsa Atleta',
+        texto: 'Manifestação: "Sou atleta e meu pagamento da Bolsa Atleta está atrasado há dois meses."',
+        assuntoId: 'esporte',
+        subassunto: 'Bolsa Atleta',
+        tags: ['Atletas', 'Pagamento', 'Atraso', 'Não pagamento', 'SNE - Excelência Esportiva']
+      },
+      {
+        id: 2,
+        titulo: '2. Suspeita Envolvendo CBF',
+        texto: 'Manifestação: "Há suspeita de irregularidade envolvendo a Confederação Brasileira de Futebol."',
+        assuntoId: 'esporte',
+        subassunto: 'Entidades Desportivas',
+        tags: ['Confederação', 'Confederação Brasileira de Futebol (CBF)', 'Futebol', 'Suposta Irregularidade']
+      },
+      {
+        id: 3,
+        titulo: '3. Assédio no Esporte Seguro',
+        texto: 'Manifestação: "Atletas relatam suposto assédio sexual praticado por integrante de um clube."',
+        assuntoId: 'esporte',
+        subassunto: 'Esporte Seguro',
+        tags: ['Assédio Sexual', 'Atletas', 'Clube', 'Suposta Conduta Inadequada']
+      },
+      {
+        id: 4,
+        titulo: '4. Erro Sistema Bolsa Atleta',
+        texto: 'Manifestação: "O sistema da Bolsa Atleta apresenta erro quando tento enviar minha documentação."',
+        assuntoId: 'ti_sistemas',
+        subassunto: 'Sistema Bolsa Atleta',
+        tags: ['Erro', 'Falha', 'Documentação', 'Acesso']
+      },
+      {
+        id: 5,
+        titulo: '5. Projeto Lei de Incentivo',
+        texto: 'Manifestação: "Quero saber quais documentos preciso para apresentar um projeto pela Lei de Incentivo ao Esporte."',
+        assuntoId: 'esporte',
+        subassunto: 'Lei de Incentivo ao Esporte',
+        tags: ['Projeto', 'Proponente', 'Proposta', 'Documentação', 'Orientação']
+      },
+      {
+        id: 6,
+        titulo: '6. Reforma Centro Olímpico',
+        texto: 'Manifestação: "O Centro Olímpico precisa de reforma e não possui acessibilidade adequada."',
+        assuntoId: 'esporte',
+        subassunto: 'Infraestrutura Esportiva',
+        tags: ['Centro Olímpico', 'Reforma', 'Acessibilidade', 'Manutenção']
+      },
+      {
+        id: 7,
+        titulo: '7. Irregularidade em Contrato',
+        texto: 'Manifestação: "O contrato estaria sendo executado em desacordo com o que foi contratado."',
+        assuntoId: 'corrupcao',
+        subassunto: 'Contratos e Contratações Públicas',
+        tags: ['Contratação', 'Fiscalização', 'Suposta Irregularidade', 'Pagamento']
+      },
+      {
+        id: 8,
+        titulo: '8. Irregularidade em Repasse',
+        texto: 'Manifestação: "Há suspeita de irregularidade na aplicação dos recursos repassados para determinada entidade."',
+        assuntoId: 'corrupcao',
+        subassunto: 'Parcerias e Repasses',
+        tags: ['Repasse', 'Prestação de contas', 'Proponente', 'Suposta Irregularidade']
+      },
+      {
+        id: 9,
+        titulo: '9. Possível Nepotismo',
+        texto: 'Manifestação: "Há suspeita de favorecimento de familiar na administração."',
+        assuntoId: 'corrupcao',
+        subassunto: 'Conduta e Benefícios Indevidos',
+        tags: ['Suposto Nepotismo', 'Servidor', 'Suposta Conduta Inadequada', 'CE - Comissão de Ética']
+      },
+      {
+        id: 10,
+        titulo: '10. Aposta Esportiva Irregular',
+        texto: 'Manifestação: "Quero denunciar uma possível irregularidade relacionada a apostas esportivas."',
+        assuntoId: 'premios_apostas',
+        subassunto: 'Regulamentação e Fiscalização',
+        tags: ['Apostas Esportivas', 'Fiscalização', 'Suposta Irregularidade', 'SNAEDE - Apostas Esportivas']
+      },
+      {
+        id: 11,
+        titulo: '11. Atendimento da Ouvidoria',
+        texto: 'Manifestação: "Tentei obter atendimento da Ouvidoria e não consegui orientação adequada."',
+        assuntoId: 'atendimento_publico',
+        subassunto: 'Ouvidoria',
+        tags: ['Ouvidoria - MESP', 'Acesso', 'Orientação', 'Falta de clareza']
+      },
+      {
+        id: 12,
+        titulo: '12. Dúvida sobre Fala.BR',
+        texto: 'Manifestação: "Como faço para registrar uma manifestação pelo Fala.BR?"',
+        assuntoId: 'canais_atendimento',
+        subassunto: 'Fala.BR',
+        tags: ['Fala.BR', 'Orientação', 'Acesso']
+      }
+    ];
+
+    // -------------------------------------------------------------
+    // Interactive Simulator State & Rendering
+    // -------------------------------------------------------------
+    let selectedAssuntoId = null;
+    let selectedSubassunto = null;
+    let selectedTags = new Set();
+    let currentTagFilter = 'todas';
+    let activePresetId = null;
+
+    function initSimulator() {
+      renderCasePresets();
+      renderAssuntosList();
+      renderTagCategoryButtons();
+      renderTagsCloud();
+      renderRecommendedTags();
+      updateSimulationPreview();
+    }
+
+    function renderCasePresets() {
+      const container = document.getElementById('casePresetsContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      practicalCasePresets.forEach(preset => {
+        const isSelected = activePresetId === preset.id;
+        const btn = document.createElement('button');
+        btn.onclick = () => loadCasePreset(preset.id);
+        btn.className = `whitespace-nowrap px-2.5 py-1 rounded-lg transition font-medium text-[10px] flex items-center gap-1 border ${
+          isSelected 
+            ? 'bg-amber-500 text-slate-950 font-bold border-amber-300 shadow-sm shadow-amber-500/20' 
+            : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border-slate-700'
+        }`;
+        btn.innerHTML = `
+          <span>${isSelected ? '▶' : '•'}</span>
+          <span>${preset.titulo}</span>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function loadCasePreset(id) {
+      const preset = practicalCasePresets.find(p => p.id === id);
+      if (!preset) return;
+
+      activePresetId = id;
+      selectedAssuntoId = preset.assuntoId;
+      selectedSubassunto = preset.subassunto;
+      selectedTags = new Set(preset.tags);
+
+      // Atualiza citação do caso
+      const quoteBox = document.getElementById('previewTextoManifestacao');
+      if (quoteBox) {
+        quoteBox.innerText = preset.texto;
+        quoteBox.classList.remove('hidden');
+      }
+
+      renderCasePresets();
+      renderAssuntosList();
+      renderSubassuntosList();
+      renderRecommendedTags();
+      renderTagsCloud();
+      updateSimulationPreview();
+    }
+
+    function renderTagCategoryButtons() {
+      const container = document.getElementById('tagCategoryContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      tagCategories.forEach(cat => {
+        const count = cat.id === 'todas' 
+          ? globalTags.length 
+          : globalTags.filter(t => t.tipo === cat.id).length;
+        
+        const isSelected = cat.id === currentTagFilter;
+        const btn = document.createElement('button');
+        btn.onclick = () => filterTagCategory(cat.id);
+        btn.className = `tag-cat-btn whitespace-nowrap px-2.5 py-1 rounded-lg transition font-medium text-[10px] flex items-center gap-1.5 ${
+          isSelected 
+            ? 'bg-amber-500 text-slate-950 font-bold shadow-sm shadow-amber-500/20' 
+            : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
+        }`;
+        btn.innerHTML = `
+          <span>${cat.label}</span>
+          <span class="text-[9px] px-1 py-0.2 rounded font-mono ${
+            isSelected ? 'bg-amber-600/40 text-slate-950' : 'bg-slate-700 text-slate-400'
+          }">${count}</span>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function renderAssuntosList() {
+      const container = document.getElementById('assuntosListContainer');
+      container.innerHTML = '';
+
+      classificationTree.forEach(assunto => {
+        const isSelected = assunto.id === selectedAssuntoId;
+        const btn = document.createElement('button');
+        btn.onclick = () => selectAssunto(assunto.id);
+        btn.className = `w-full text-left p-2.5 rounded-xl border transition flex items-center justify-between group ${
+          isSelected
+            ? 'bg-govblue-600 border-blue-400 text-white shadow-md shadow-govblue-900/50 font-semibold'
+            : 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800 hover:text-white hover:border-slate-600'
+        }`;
+
+        let iconBadge = '📁';
+        if (assunto.categoria === 'denuncia') iconBadge = '⚖️';
+        if (assunto.categoria === 'sensivel') iconBadge = '🛡️';
+        if (assunto.categoria === 'estrategico') iconBadge = '🎰';
+        if (assunto.categoria === 'ti') iconBadge = '💻';
+        if (assunto.categoria === 'finalistico') iconBadge = '🏅';
+
+        btn.innerHTML = `
+          <div class="flex items-center gap-2 truncate">
+            <span class="text-sm">${iconBadge}</span>
+            <span class="text-xs truncate">${assunto.nome}</span>
+          </div>
+          <span class="text-[10px] px-1.5 py-0.5 rounded font-mono ${
+            isSelected ? 'bg-blue-800 text-blue-200' : 'bg-slate-700/80 text-slate-400 group-hover:text-slate-200'
+          }">
+            ${assunto.subassuntos.length}
+          </span>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function selectAssunto(id) {
+      if (selectedAssuntoId === id && selectedSubassunto !== null) return;
+      selectedAssuntoId = id;
+      selectedSubassunto = null; // reset subassunto when subject changes
+      activePresetId = null;
+
+      const quoteBox = document.getElementById('previewTextoManifestacao');
+      if (quoteBox) quoteBox.classList.add('hidden');
+
+      renderCasePresets();
+      renderAssuntosList();
+      renderSubassuntosList();
+      renderRecommendedTags();
+      updateSimulationPreview();
+    }
+
+    function renderSubassuntosList() {
+      const container = document.getElementById('subassuntosListContainer');
+      const counter = document.getElementById('subassuntosCount');
+      
+      const assunto = classificationTree.find(a => a.id === selectedAssuntoId);
+      if (!assunto) {
+        counter.innerText = 'Depende do Assunto';
+        container.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500">
+            <p class="text-xs font-medium text-slate-400">Nenhum Assunto selecionado</p>
+            <p class="text-[11px] text-slate-500 mt-1">Selecione um assunto na coluna 1.</p>
+          </div>
+        `;
+        return;
+      }
+
+      counter.innerText = `${assunto.subassuntos.length} disponíveis`;
+      container.innerHTML = '';
+
+      assunto.subassuntos.forEach(sub => {
+        const isSelected = sub === selectedSubassunto;
+        const btn = document.createElement('button');
+        btn.onclick = () => selectSubassunto(sub);
+        btn.className = `w-full text-left p-2.5 rounded-xl border transition flex items-center justify-between group ${
+          isSelected
+            ? 'bg-emerald-600 border-emerald-400 text-white shadow-md shadow-emerald-950/50 font-semibold'
+            : 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800 hover:text-white hover:border-slate-600'
+        }`;
+
+        btn.innerHTML = `
+          <div class="flex items-center gap-2 truncate">
+            <span class="text-xs ${isSelected ? 'text-emerald-200' : 'text-emerald-400'}">↳</span>
+            <span class="text-xs truncate">${sub}</span>
+          </div>
+          ${isSelected ? '<span class="text-[10px] bg-emerald-800 text-emerald-100 px-1.5 py-0.5 rounded font-mono">Selecionado</span>' : ''}
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function selectSubassunto(nome) {
+      selectedSubassunto = nome;
+      renderSubassuntosList();
+      renderRecommendedTags();
+      updateSimulationPreview();
+    }
+
+    function renderRecommendedTags() {
+      const container = document.getElementById('recommendedTagsList');
+      const applyBtn = document.getElementById('applyAllRecBtn');
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (!selectedAssuntoId || !selectedSubassunto) {
+        container.innerHTML = '<span class="text-[10px] text-slate-500 italic">Selecione um subassunto para ver sugestões inteligentes.</span>';
+        if (applyBtn) applyBtn.disabled = true;
+        return;
+      }
+
+      const key = `${selectedAssuntoId}_${selectedSubassunto}`;
+      const recs = recommendedTagsMap[key] || [];
+
+      if (recs.length === 0) {
+        container.innerHTML = '<span class="text-[10px] text-slate-400 italic">Explore as tags no catálogo abaixo.</span>';
+        if (applyBtn) applyBtn.disabled = true;
+        return;
+      }
+
+      if (applyBtn) applyBtn.disabled = false;
+
+      recs.forEach(tagName => {
+        const isSelected = selectedTags.has(tagName);
+        const chip = document.createElement('button');
+        chip.onclick = () => toggleTag(tagName);
+        chip.className = `px-2 py-0.5 rounded-lg text-[10px] transition border flex items-center gap-1 ${
+          isSelected 
+            ? 'bg-amber-500 text-slate-950 font-bold border-amber-300 shadow-sm' 
+            : 'bg-amber-950/70 text-amber-200 hover:bg-amber-900 border-amber-700/60'
+        }`;
+        chip.innerHTML = `
+          <span>${isSelected ? '✓' : '★'}</span>
+          <span>${tagName}</span>
+        `;
+        container.appendChild(chip);
+      });
+    }
+
+    function applyAllRecommendedTags() {
+      if (!selectedAssuntoId || !selectedSubassunto) return;
+      const key = `${selectedAssuntoId}_${selectedSubassunto}`;
+      const recs = recommendedTagsMap[key] || [];
+      recs.forEach(tag => selectedTags.add(tag));
+      renderRecommendedTags();
+      renderTagsCloud();
+      updateSimulationPreview();
+    }
+
+    function filterTagCategory(cat) {
+      currentTagFilter = cat;
+      renderTagCategoryButtons();
+      renderTagsCloud();
+    }
+
+    function renderTagsCloud() {
+      const container = document.getElementById('tagsCloudContainer');
+      container.innerHTML = '';
+
+      const tags = globalTags.filter(t => currentTagFilter === 'todas' || t.tipo === currentTagFilter);
+
+      tags.forEach(tag => {
+        const isSelected = selectedTags.has(tag.nome);
+        const btn = document.createElement('button');
+        btn.onclick = () => toggleTag(tag.nome);
+        
+        let colorClasses = isSelected
+          ? 'bg-amber-500 text-slate-950 font-bold border-amber-300 shadow-sm'
+          : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white border-slate-700';
+
+        btn.className = `px-2 py-1 rounded-lg text-[11px] border transition flex items-center gap-1 ${colorClasses}`;
+        btn.innerHTML = `
+          <span>${isSelected ? '✓ ' : '+ '}</span>
+          <span>${tag.nome}</span>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function toggleTag(nome) {
+      if (selectedTags.has(nome)) {
+        selectedTags.delete(nome);
+      } else {
+        selectedTags.add(nome);
+      }
+      renderRecommendedTags();
+      renderTagsCloud();
+      updateSimulationPreview();
+    }
+
+    function updateSimulationPreview() {
+      const assunto = classificationTree.find(a => a.id === selectedAssuntoId);
+      document.getElementById('previewAssunto').innerText = assunto ? assunto.nome : '— (Nenhum selecionado)';
+      document.getElementById('previewSubassunto').innerText = selectedSubassunto ? selectedSubassunto : '— (Aguardando seleção)';
+
+      const tagsContainer = document.getElementById('previewTagsList');
+      if (selectedTags.size === 0) {
+        tagsContainer.innerHTML = '<span class="text-slate-500 italic">Nenhuma tag marcada (opcional)</span>';
+      } else {
+        tagsContainer.innerHTML = '';
+        selectedTags.forEach(tag => {
+          const badge = document.createElement('span');
+          badge.className = 'bg-amber-950/80 text-amber-300 border border-amber-700/60 px-1.5 py-0.5 rounded text-[10px] font-mono';
+          badge.innerText = `#${tag}`;
+          tagsContainer.appendChild(badge);
+        });
+      }
+    }
+
+    function resetSimulation() {
+      selectedAssuntoId = null;
+      selectedSubassunto = null;
+      selectedTags.clear();
+      activePresetId = null;
+
+      const quoteBox = document.getElementById('previewTextoManifestacao');
+      if (quoteBox) quoteBox.classList.add('hidden');
+
+      renderCasePresets();
+      renderAssuntosList();
+      renderSubassuntosList();
+      renderRecommendedTags();
+      renderTagsCloud();
+      updateSimulationPreview();
+    }
+
+    // Inicialização ao carregar página
+    document.addEventListener('DOMContentLoaded', () => {
+      updateControls();
+      initSimulator();
+    });
+  </script>
+</body>
+</html>
